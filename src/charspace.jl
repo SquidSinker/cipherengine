@@ -59,4 +59,4 @@ function untokenise(vect::Vector{Int}, W::CSpace; cases::Vector{Bool})
     return out
 end
 
-Alphabet(case = false) = CSpace("ABCDEFGHIJKLMNOPQRSTUVWXYZ"; case_sensitive = case)
+Alphabet(case = false) = CSpace("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; case_sensitive = case)

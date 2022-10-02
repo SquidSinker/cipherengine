@@ -98,6 +98,7 @@ end
 
 function switch!(S::Substitution, posa::Integer, posb::Integer)
     S.mapping = switch!(copy(S.mapping), posa, posb)
+    S
 end
 
 
