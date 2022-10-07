@@ -26,3 +26,20 @@ function crack_track(vect::Vector{Int}, spawns::Int, stop)
 
     return evolve_until(x -> x(vect), mutate, start, spawns, stop - 0.5, 350, quadgramlog)
 end
+
+# ONLY FOR 26-TOKEN CSPACES
+function crack_genetic(vect::Vector{Int}, spawns::Int) # token vector // number of mutatated subs spawned each genereation
+
+    f = sort_by_values(frequencies(vect)) # vector of token indices (Ints) sorted in ascending frequencies
+    for i in 1:26
+        if !(i in f)
+            insert!(f, 1, i)
+        end
+    end
+    # Appends any tokens that did not appear
+
+    start = Substitution([f[findfirst(x -> isequal(x,i), eng)] for i in 1:26]) # starts with letters arranged by frequencies against english_frequencies
+
+
+    return evolve_until(x -> x(vect), mutate, start, spawns, stop - 0.5, 350, quadgramlog)
+end
