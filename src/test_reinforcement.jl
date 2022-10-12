@@ -24,8 +24,6 @@ In our busy modern lives we have largely forgotten that language is meant to be 
 W = Alphabet(false)
 (v, cases) = tokenise(text, W)
 
-stop = quadgramlog(v)
-
 
 
 
@@ -37,41 +35,18 @@ c = S(v)
 
 
 
-print("Beginning benchmark...")
+print("Beginning test...")
 
-include("genetic_crack.jl")
+include("reinforcement.jl")
 
-fitnesses = []
-lengths = []
-
-for i in 1:50
-    ## RUN
-    best, fitness = crack_track(c, 18, stop)
-
-    N = length(fitness)
-    append!(lengths, N)
-
-    # println(untokenise(best(c), W; cases))
-    ## STOP and PROCESS
-
-    while length(fitness) <= 355
-        append!(fitness, fitness[end])
-    end
-
-    append!(fitnesses, [fitness])
-
-    print(i)
+function Choice_Weights(t, n)
+    return ones(n) / n
 end
 
+using JLD2
+@load "english_monogram_frequencies.jld2" english_frequencies
 
-fitnesses = permutedims(hcat(fitnesses...))
-
-avg = sum(fitnesses, dims = 1) / 51
-avgL = sum(lengths) / 50
-
+engf = [english_frequencies[i] for i in 1:length(keys(english_frequencies))]
 
 
-
-
-using Plots
-plot(avg)
+linear_reinforcement(c, W, 100, Choice_Weights, quadgramlog; known_freq = engf)

@@ -41,5 +41,5 @@ function crack_genetic(vect::Vector{Int}, spawns::Int) # token vector // number 
     start = Substitution([f[findfirst(x -> isequal(x,i), eng)] for i in 1:26]) # starts with letters arranged by frequencies against english_frequencies
 
 
-    return evolve_until(x -> x(vect), mutate, start, spawns, stop - 0.5, 350, quadgramlog)
+    return evolve_until(x -> invert(x)(vect), mutate, start, spawns, stop - 0.5, 350, quadgramlog)
 end
