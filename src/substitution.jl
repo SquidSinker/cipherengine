@@ -19,12 +19,17 @@ import Base.length, Base.show, Base.+, Base.-, Base.*, Base.==, Base.getindex, L
 # S[i] returns j if i -> j
 mutable struct Substitution
     mapping::Vector{Int}
+
+    function Substitution(vect::Vector{Int})
+        @assert collect(1:length(vect)) == sort(vect) "Substitutions must contain a permutation of integers 1:N"
+        new(vect)
+    end
 end
 
 
 # Init Substitution from alphabet
 function sub_from_alphabet(alphabet::String) ::Substitution
-    @assert length(unique(alphabet)) == 26
+    @assert length(unique(alphabet)) == 26 "Alphabet substitutions must contain all letters of the alphabet once"
     return Substitution([findfirst(==(i), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in alphabet])
 end
 
@@ -59,7 +64,7 @@ end
 
 # Compounds two Substitutions to make one new
 function +(a::Substitution, b::Substitution)
-    @assert length(a) == length(b)
+    @assert length(a) == length(b) "Substitutions must have the same length"
     Substitution([b[i] for i in a.mapping])
 end
 
