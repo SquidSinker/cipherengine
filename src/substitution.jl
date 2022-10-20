@@ -15,21 +15,22 @@ import Base.length, Base.show, Base.+, Base.-, Base.*, Base.==, Base.getindex, L
 
 
 
-
+# Substitution struct
+# S[i] returns j if i -> j
 mutable struct Substitution
     mapping::Vector{Int}
 end
 
-function Substitution(alphabet::String)
+
+# Init Substitution from alphabet
+function sub_from_alphabet(alphabet::String) ::Substitution
     @assert length(unique(alphabet)) == 26
-    Substitution([findfirst(x -> isequal(x, i), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in alphabet])
+    return Substitution([findfirst(==(i), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in alphabet])
 end
 
 
 
-
-
-length(S::Substitution) = length(S.mapping)
+length(S::Substitution) = length(S.mapping) :: Int
 
 
 
@@ -40,14 +41,14 @@ end
 
 
 
-getindex(S::Substitution, i::Int) = S.mapping[i]
+getindex(S::Substitution, i::Int) = S.mapping[i] ::Int
 
 
-
+# Checks whether A and B are identical Substitutions
 ==(a::Substitution, b::Substitution) = (a.mapping == b.mapping)
 
 
-
+# if S: i -> j     invert(S): j -> i
 invert(S::Substitution) = Substitution([findfirst(x -> isequal(x, i), S) for i in 1:length(S)])
 
 function invert!(self::Substitution)
@@ -56,7 +57,7 @@ function invert!(self::Substitution)
 end
 
 
-
+# Compounds two Substitutions to make one new
 function +(a::Substitution, b::Substitution)
     @assert length(a) == length(b)
     Substitution([b[i] for i in a.mapping])
@@ -65,14 +66,14 @@ end
 -(a::Substitution, b::Substitution) = a + invert(b)
 
 
-
-function (S::Substitution)(vtoken::Vector{Int})
+# Applies Substitution to token vec
+function (S::Substitution)(vtoken::Vector{Int}) ::Vector{Int}
     return [S[token] for token in vtoken]
 end
 
 
-
-function shift(S::Substitution, c::Int)
+# Shifts S mapping by c (mod length(S))
+function shift(S::Substitution, c::Int) ::Substitution
     c = mod(c, length(S))
     return Substitution(vcat(S.mapping[c+1:end], S.mapping[1:c]))
 end
@@ -84,7 +85,7 @@ function shift!(self::Substitution, c::Int)
 end
 
 
-
+# Switches two entries at posa posb in any Vector
 function switch!(self::AbstractVector, posa::Integer, posb::Integer)
     self[posa], self[posb] = self[posb], self[posa]
     self
@@ -92,7 +93,7 @@ end
 
 
 
-function switch(S::Substitution, posa::Integer, posb::Integer)
+function switch(S::Substitution, posa::Integer, posb::Integer) ::Substitution
     return Substitution(switch!(copy(S.mapping), posa, posb))
 end
 
@@ -102,8 +103,8 @@ function switch!(S::Substitution, posa::Integer, posb::Integer)
 end
 
 
-
-function mutate(S::Substitution, slice::Tuple{Int, Int} = (1, length(S)))
+# Switches two random places in a Substitution, within the slice tuple
+function mutate(S::Substitution, slice::Tuple{Int, Int} = (1, length(S))) ::Substitution
     switch(S, rand(slice[1]:slice[2]), rand(1:length(S)))
 end
 
