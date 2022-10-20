@@ -1,19 +1,26 @@
-function IOC(ciphe::Vector{Int64})
-    uniquemems = collect(1:26)
-    len = length(ciphe)
+include("charspace.jl")
+
+
+function ioc(vtoken::Vector{Int64}, W::CSpace) ::Float64
+    len = length(vtoken)
     sum = 0
-    for i in uniquemems
-       n = count(==(i), ciphe)
+
+    for i in 1:length(W)
+       n = count(==(i), vtoken)
        sum += n * (n-1)
     end
-    return (sum/(len*(len-1)))/26
+
+    return sum / (len*(len-1)) / 26
 end
 
-function pIOC(ciphe::Vector{Int64}, n::Int64)
+
+
+function pioc(vtoken::Vector{Int64}, n::Int64, W::CSpace) ::Float64
     avgIOC = 0
+
     for i in 1:n
-        avgIOC += IOC(ciphe[i:n:end])
-        println(ciphe[i:n:end])
+        avgIOC += ioc(vtoken[i:n:end], W)
     end
-    return avgIOC/n
+
+    return avgIOC / n
 end
