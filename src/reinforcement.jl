@@ -46,7 +46,6 @@ end
 
 
 function new_PosProbMat(vect::Vector{Int}, W::CSpace)
-    L = length(vect)
     n = length(W.tokenisation)
 
     # uniform weighting
