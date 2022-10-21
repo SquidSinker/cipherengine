@@ -5,7 +5,7 @@ function ioc(vtoken::Vector{Int64}, W::CSpace) ::Float64
     len = length(vtoken)
     sum = 0
 
-    for i in 1:length(W)
+    for i in 1:length(W.tokenisation)
        n = count(==(i), vtoken)
        sum += n * (n-1)
     end
