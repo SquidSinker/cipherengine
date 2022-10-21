@@ -121,7 +121,15 @@ end
 
 
 
-function linear_reinforcement(vect::Vector{Int}, W::CSpace, generations::Int, ChoiceWeights::Function, fitness::Function; known_freq::Vector = nothing, reinforce_rate = 1)
+function linear_reinforcement(
+    vect::Vector{Int},
+    W::CSpace,
+    generations::Int,
+    ChoiceWeights::Function,
+    fitness::Function;
+    known_freq::Vector = nothing,
+    reinforce_rate = 1
+)
     P = new_PosProbMat(vect, W, known_freq)
 
     apply_to_text(s) = invert(s)(vect)
