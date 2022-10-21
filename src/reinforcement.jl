@@ -82,13 +82,13 @@ using StatsBase # for sample()
 
 function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int)
 
-    out = Vector{Tuple{Int, Int}}()
+    out = Vector{Tuple{Int}}()
 
     Draw_Matrix = PosProbMat .* ChoiceWeights # Broadcast multiply along FIRST (vertical) dimension
 
     # Stop choices of ('a' goes to n) if S[n] already == 'a'
     for i in 1:length(S)
-        PMatrix[S[i], i] = 0
+        Draw_Matrix[S[i], i] = 0
     end
 
 
