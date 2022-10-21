@@ -1,5 +1,6 @@
 include("charspace.jl")
 include("substitution.jl")
+include("tuco.jl")
 
 
 
@@ -116,12 +117,8 @@ end
 
 
 
-
-
-
-
 function linear_reinforcement(
-    vect::Vector{Int},
+    vtoken::Vector{Int},
     W::CSpace,
     generations::Int,
     ChoiceWeights::Function,
@@ -129,16 +126,17 @@ function linear_reinforcement(
     known_freq::Vector = nothing,
     reinforce_rate = 1
 )
-    P = new_PosProbMat(vect, W, known_freq)
+    P = new_PosProbMat(vtoken, W, known_freq)
 
-    apply_to_text(s) = invert(s)(vect)
+    apply_to_text(s) = invert(s)(vtoken)
 
-    parent_sub = predict_substitution(P)
+    parent_sub = eng_frequency_matched_substitution(vtoken)
     F = fitness(apply_to_text(parent_sub))
 
+    n = length(W.tokenisation)
 
     for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, ChoiceWeights(gen, F), spawns)
+        swaps = generate_swaps(parent_sub, P, ChoiceWeights(gen, F, n), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
         delta_F = [fitness(apply_to_text.(new_substitutions))] - F
 

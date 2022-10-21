@@ -28,6 +28,36 @@ end
 
 
 
+using JLD2
+@load "english_monogram_frequencies.jld2" english_frequencies
+# Dict with i => j where i is the token index and j is the frequency
+
+function sort_by_values(d::Dict)
+    a = sort(collect(d), by = x -> x[2])
+    return getindex.(a, 1)
+end
+
+eng = sort_by_values(english_frequencies)
+# Returns Vector sorting elements of english_frequencies in increasing frequency order
+
+function eng_frequency_matched_substitution(vtoken::Vector)
+    f = sort_by_values(frequencies(vtoken)) # vector of token indices (Ints) sorted in ascending frequencies
+    for i in 1:26
+        if !(i in f)
+            insert!(f, 1, i)
+        end
+    end
+    # Appends any tokens that did not appear
+
+    return Substitution([f[findfirst(x -> isequal(x,i), eng)] for i in 1:26]) # starts with letters arranged by frequencies against english_frequencies
+end
+
+
+
+
+
+
+
 function orthodot(freq1::Dict, freq2::Dict)
     V1, V2 = [values(freq1)], [values(freq2)]
     k = intersect(keys(freq1),keys(freq2))
@@ -35,7 +65,7 @@ function orthodot(freq1::Dict, freq2::Dict)
     return dot(v1, v2)/sqrt(dot(V1, V1)*dot(V2, V2))
 end
 
-using JLD2
+
 
 # eng_quadgrams = Dict()
 
@@ -51,6 +81,11 @@ using JLD2
 # end
 
 # @save "quadgram_score_dict.jld2" quadgram_scores = eng_quadgrams
+
+
+
+
+
 
 @load "quadgram_score_dict.jld2" quadgram_scores
 

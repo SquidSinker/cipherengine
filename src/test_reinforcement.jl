@@ -39,7 +39,7 @@ print("Beginning test...")
 
 include("reinforcement.jl")
 
-function Choice_Weights(t, n)
+function Choice_Weights(t, F, n)
     return ones(n) / n
 end
 
