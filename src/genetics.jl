@@ -1,5 +1,5 @@
 # Returns elemnt of input Vector that maximises x -> fitness(f(x)), with a floor item that is returned if no item has higher fitness
-function optimisefloor_silent(f::Function, floor, inputs::AbstractVector, fitness::Function)
+function optimise_floor(f::Function, floor, inputs::AbstractVector, fitness::Function)
     floorscore = fitness(f(floor))
     scores = [fitness(f(i)) for i in inputs]
 
@@ -13,7 +13,7 @@ function evolve_silent(f::Function, mutate::Function, parent, spawns::Int, gener
     scores = Float64[]
 
     for i in 1:generations
-        parent = optimisefloor_silent(f, parent, [mutate(parent) for i in 1:spawns], fitness)
+        parent = optimise_floor(f, parent, [mutate(parent) for i in 1:spawns], fitness)
         append!(scores, fitness(f(parent)))
     end
 
@@ -31,7 +31,7 @@ function evolve_until(f::Function, mutate::Function, parent, spawns::Int, fitnes
             return parent, scores
         end
 
-        parent = optimisefloor_silent(f, parent, [mutate(parent) for i in 1:spawns], fitness)
+        parent = optimise_floor(f, parent, [mutate(parent) for i in 1:spawns], fitness)
         append!(scores, fitness(f(parent)))
     end
 

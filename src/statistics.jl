@@ -45,7 +45,7 @@ end
 
 
 # sum(weights) is SLOW FOR LARGE LISTS
-# front weighted standard deviation: avg of square difference of adjacent values, weighted by a decreasing geometric series
+# front weighted standard deviation: rooted avg of square difference of adjacent values, weighted by a decreasing geometric series
 function fw_stdev(data::Vector, r = 0.5)
     weights = [r ^ i for i in 1:length(data)]
     w_total = sum(weights)
