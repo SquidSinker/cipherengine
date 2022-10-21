@@ -29,7 +29,7 @@ function update_delta(delta_fitness, p_old, p_new; rate = 1)
 end
 
 
-# Updates relevant PosProbMat entries based on delta_fitness
+# Updates relevant PosProbMat entries based on delta_fitness, posA and posB are positions of A and B BEFORE SWAPPING
 function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::Int, posB::Int, delta_fitness::Float64; reinforce_rate = 1)
     dA = update_delta(delta_fitness, PosProbMat[tokenA, posA], PosProbMat[tokenA, posB]; reinforce_rate)
     dB = update_delta(delta_fitness, PosProbMat[tokenB, posB], PosProbMat[tokenB, posA]; reinforce_rate)
@@ -80,36 +80,72 @@ end
 using StatsBase # for sample()
 
 
+function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int)
+
+    out = Vector{Tuple{Int, Int}}()
+
+    Draw_Matrix = PosProbMat .* ChoiceWeights # Broadcast multiply along FIRST (vertical) dimension
+
+    # Stop choices of ('a' goes to n) if S[n] already == 'a'
+    for i in 1:length(S)
+        PMatrix[S[i], i] = 0
+    end
+
+
+    indices = Tuple.(keys(Draw_Matrix))
+
+    for _ in 1:number
+        (a, n) = sample(indices, Weights(vec( Draw_Matrix )))
+
+        b = S[n] # 'b' is already at n
+        m = findfirst(==(a), S.mapping) # m is original pos of 'a'
+
+        push!(out, (a, b, m, n))
+
+        # Stop them being chosen again
+        Draw_Matrix[a, n] = 0
+        Draw_Matrix[b, m] = 0
+    end
+
+
+    return out
+end
+
+
+
+
+
+
+
+
+
+
+
 function linear_reinforcement(vect::Vector{Int}, W::CSpace, generations::Int, ChoiceWeights::Function, fitness::Function; known_freq::Vector = nothing, reinforce_rate = 1)
     P = new_PosProbMat(vect, W, known_freq)
 
-    S = predict_substitution(P)
-    prev_fitness = fitness(invert(S)(vect))
+    apply_to_text(s) = invert(s)(vect)
 
-    indices = Tuple.(keys(PosProbMat))
-    
-    for t in 1:generations
-        m, n = 0, 0
-        while m == n # reroll until a is not in position n (swap is viable)
-            (a, n) = sample(indices, Weights(vec( PosProbMat * ChoiceWeights(t, length(W.tokenisation)) )))
-            
-            m = findfirst(x -> isequal(a), S.mapping)
+    parent_sub = predict_substitution(P)
+    F = fitness(apply_to_text(parent_sub))
+
+
+    for gen in 1:generations
+        swaps = generate_swaps(parent_sub, P, ChoiceWeights(gen, F), spawns)
+        new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
+        delta_F = [fitness(apply_to_text.(new_substitutions))] - F
+
+        for ((a, b, m, n), dF) in zip(swaps, delta_F) # Update P with the data
+            update_PosProbMat!(P, a, b, m, n, dF; reinforce_rate = reinforce_rate)
         end
 
-        b = S.mapping[n]
-
-
-        switch!(S, m, n)
-        new_fitness = fitness(invert(S)(vect))
-
-        dF = new_fitness - old_fitness
-
-        update_PosProbMat!(P, a, b, m, n, dF; reinforce_rate)
-
-        old_fitness = new_fitness
+        # Set new parent and fitness
+        parent_sub = new_substitutions[argmax(delta_F)]
+        F += maximum(delta_F)
     end
+    
 
-    return P
+    return P, parent_sub # Reinforced Matrix // final Substitution in lineage
 end
 
 
