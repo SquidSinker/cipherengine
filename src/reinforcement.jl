@@ -62,7 +62,7 @@ function new_PosProbMat(vect::Vector{Int}, W::CSpace, known_freq::Vector)
     # init PosProbMat as binomial guesses
     Tallies = [count(x -> isequal(x, i), vect) for i in 1:n]
 
-    PosProbMat = hcat([normalise.(normal_approx_pd.(i, L, known_freq)) for i in Tallies]...)
+    PosProbMat = hcat([normalise(normal_approx_pd.(i, L, known_freq)) for i in Tallies]...)
 
     return PosProbMat
 end

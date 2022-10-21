@@ -27,15 +27,15 @@ W = Alphabet(false)
 
 
 
-S = Substitution("ABKLMNOPQCRSVZHIJDEFGWXYUT")
+S = sub_from_alphabet("ABKLMNOPQCRSVZHIJDEFGWXYUT")
 c = S(v)
 
+show(S)
 
 
 
 
-
-print("Beginning test...")
+println("Beginning test...")
 
 include("reinforcement.jl")
 
