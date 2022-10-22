@@ -49,4 +49,4 @@ using JLD2
 engf = [english_frequencies[i] for i in 1:length(keys(english_frequencies))]
 
 
-linear_reinforcement(c, W, 100, Choice_Weights, quadgramlog; known_freq = engf)
+linear_reinforcement(c, W, 100, 10, Choice_Weights, quadgramlog; known_freq = engf)

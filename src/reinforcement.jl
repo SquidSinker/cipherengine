@@ -20,7 +20,7 @@ end
 
 
 # Limiting function taking (-inf, inf) -> (-p_old, p_new)
-function update_delta(delta_fitness, p_old, p_new; rate = 1)
+function update_delta(delta_fitness, p_old, p_new, rate)
     mu = (p_new + p_old) # division by 2 carried out at the end
     diff = (p_new - p_old) # division by 2 carried out at the end
 
@@ -31,9 +31,9 @@ end
 
 
 # Updates relevant PosProbMat entries based on delta_fitness, posA and posB are positions of A and B BEFORE SWAPPING
-function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::Int, posB::Int, delta_fitness::Float64; reinforce_rate = 1)
-    dA = update_delta(delta_fitness, PosProbMat[tokenA, posA], PosProbMat[tokenA, posB]; reinforce_rate)
-    dB = update_delta(delta_fitness, PosProbMat[tokenB, posB], PosProbMat[tokenB, posA]; reinforce_rate)
+function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::Int, posB::Int, delta_fitness::Float64, reinforce_rate)
+    dA = update_delta(delta_fitness, PosProbMat[tokenA, posA], PosProbMat[tokenA, posB], reinforce_rate)
+    dB = update_delta(delta_fitness, PosProbMat[tokenB, posB], PosProbMat[tokenB, posA], reinforce_rate)
 
     PosProbMat[tokenA, posA] -= dA
     PosProbMat[tokenA, posB] += dA
@@ -80,9 +80,9 @@ end
 using StatsBase # for sample()
 
 
-function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int)
+function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int) ::Vector{Tuple{Int64, Int64, Int64, Int64}}
 
-    out = Vector{Tuple{Int}}()
+    out = Vector{Tuple{Int64, Int64, Int64, Int64}}()
 
     Draw_Matrix = PosProbMat .* ChoiceWeights # Broadcast multiply along FIRST (vertical) dimension
 
@@ -121,6 +121,7 @@ function linear_reinforcement(
     vtoken::Vector{Int},
     W::CSpace,
     generations::Int,
+    spawns::Int,
     ChoiceWeights::Function,
     fitness::Function;
     known_freq::Vector = nothing,
@@ -138,10 +139,10 @@ function linear_reinforcement(
     for gen in 1:generations
         swaps = generate_swaps(parent_sub, P, ChoiceWeights(gen, F, n), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = [fitness(apply_to_text.(new_substitutions))] - F
+        delta_F = fitness.(apply_to_text.(new_substitutions)) .- F
 
         for ((a, b, m, n), dF) in zip(swaps, delta_F) # Update P with the data
-            update_PosProbMat!(P, a, b, m, n, dF; reinforce_rate = reinforce_rate)
+            update_PosProbMat!(P, a, b, m, n, dF, reinforce_rate)
         end
 
         # Set new parent and fitness
