@@ -51,7 +51,7 @@ end
 
 
 function new_PosProbMat(vect::Vector{Int}, W::CSpace)
-    n = length(W.tokenisation)
+    n = length(W.tokenised)
 
     # uniform weighting
     PosProbMat = ones((n, n)) / n
@@ -61,7 +61,7 @@ end
 
 function new_PosProbMat(vect::Vector{Int}, W::CSpace, known_freq::Vector)
     L = length(vect)
-    n = length(W.tokenisation)
+    n = length(W.tokenised)
 
     # init PosProbMat as binomial guesses
     Tallies = [count(==(i), vect) for i in 1:n]
@@ -138,7 +138,7 @@ function linear_reinforcement(
     parent_sub = eng_frequency_matched_substitution(vtoken)
     F = fitness(apply_to_text(parent_sub))
 
-    n = length(W.tokenisation)
+    n = length(W.tokenised)
 
     plot()
     anim = @animate for gen in 1:generations

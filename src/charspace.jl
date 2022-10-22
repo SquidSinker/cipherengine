@@ -1,8 +1,8 @@
 
 # Currently untokenise() method has no reinsertion of frozen chars
 
-struct CSpace
-    tokenisation::Vector{Char}
+mutable struct CSpace
+    tokenised::Vector{Char}
     frozen::Vector{Char}
     case_sensitive::Bool
 
@@ -23,17 +23,17 @@ CSpace(text::String; frozen::Vector{Char} = Vector{Char}(), case_sensitive = fal
 
 function show(io::IO, W::CSpace)
     println("Character Space, case sensitive = ", W.case_sensitive)
-    println("Tokens: ", W.tokenisation)
+    println("Tokens: ", W.tokenised)
     println("Frozen: ", W.frozen)
 end
 
 function tokenise(text::String, W::CSpace)
-    text = filter(x -> lowercase(x) in W.tokenisation, text)
+    text = filter(x -> lowercase(x) in W.tokenised, text)
 
     if W.case_sensitive
-        return [findfirst(x -> isequal(x, i), W.tokenisation) for i in text]
+        return [findfirst(x -> isequal(x, i), W.tokenised) for i in text]
     else
-        return ([findfirst(x -> isequal(x, lowercase(i)), W.tokenisation) for i in text], [isuppercase(i) for i in text])
+        return ([findfirst(x -> isequal(x, lowercase(i)), W.tokenised) for i in text], [isuppercase(i) for i in text])
     end
 end
 
@@ -42,15 +42,15 @@ function untokenise(vect::Vector{Int}, W::CSpace; cases::Vector{Bool})
 
     if W.case_sensitive
         for i in vect
-            out *= W.tokenisation[i]
+            out *= W.tokenised[i]
         end
     else
         for (i, upper) in zip(vect, cases)
 
             if upper
-                out *= uppercase(W.tokenisation[i])
+                out *= uppercase(W.tokenised[i])
             else
-                out *= W.tokenisation[i]
+                out *= W.tokenised[i]
             end
 
         end

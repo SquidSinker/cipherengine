@@ -10,32 +10,33 @@ The only admitted tokens are integers (aka. preprocessed character space)
 
 
 import Base.length, Base.show, Base.+, Base.-, Base.*, Base.==, Base.getindex, LinearAlgebra.dot
-
+include("charspace.jl")
 # Substitution FRAMEWORK
 
 
 
-# Substitution struct
+# Substitution struct with attached CSpace binding
 # S[i] returns j if i -> j
 mutable struct Substitution
     mapping::Vector{Int}
+    character_space::CSpace
 
-    function Substitution(vect::Vector{Int})
-        @assert collect(1:length(vect)) == sort(vect) "Substitutions must contain a permutation of integers 1:N"
-        new(vect)
+    function Substitution(vect::Vector{Int}, W::CSpace)
+        @assert collect(1:length(W.tokenised)) == sort(vect) "Substitutions must contain a permutation of all tokens (Integers 1:N)"
+        new(vect, W)
     end
 end
 
 
 # Init Substitution from alphabet
-function sub_from_alphabet(alphabet::String) ::Substitution
-    @assert length(unique(alphabet)) == 26 "Alphabet substitutions must contain all letters of the alphabet once"
-    return Substitution([findfirst(==(i), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in alphabet])
+function sub_from_string(string::String, W::CSpace) ::Substitution
+    @assert issetequal(string, W.tokenised) "String substitutions must contain all tokenised characters only once"
+    return Substitution([findfirst(==(i), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in alphabet], W)
 end
 
 
 
-length(S::Substitution) = length(S.mapping) :: Int
+length(S::Substitution) = length(S.mapping) ::Int
 
 
 
