@@ -1,4 +1,4 @@
-
+import Base.==
 # Currently untokenise() method has no reinsertion of frozen chars
 
 mutable struct CSpace
@@ -20,6 +20,7 @@ end
 
 CSpace(text::String; frozen::Vector{Char} = Vector{Char}(), case_sensitive = false) = CSpace(unique(text); frozen, case_sensitive)
 
+==(W1::CSpace, W2::CSpace) = (W1.tokenised == W2.tokenised) && (W1.frozen == W2.frozen) && (W1.case_sensitive == W2.case_sensitive)
 
 function show(io::IO, W::CSpace)
     println("Character Space, case sensitive = ", W.case_sensitive)

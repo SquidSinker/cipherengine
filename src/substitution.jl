@@ -28,10 +28,10 @@ mutable struct Substitution
 end
 
 
-# Init Substitution from alphabet
+# Init Substitution from string
 function sub_from_string(string::String, W::CSpace) ::Substitution
     @assert issetequal(string, W.tokenised) "String substitutions must contain all tokenised characters only once"
-    return Substitution([findfirst(==(i), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in alphabet], W)
+    return Substitution([findfirst(==(i), W.tokenised) for i in string], W)
 end
 
 
@@ -52,11 +52,11 @@ getindex(S::Substitution, i::Int) = S.mapping[i] ::Int
 
 
 # Checks whether A and B are identical Substitutions
-==(a::Substitution, b::Substitution) = (a.mapping == b.mapping)
+==(a::Substitution, b::Substitution) = (a.mapping == b.mapping) && (a.character_space == b.character_space)
 
 
 # if S: i -> j     invert(S): j -> i
-invert(S::Substitution) = Substitution([findfirst(==(i), S.mapping) for i in 1:length(S)])
+invert(S::Substitution) = Substitution([findfirst(==(i), S.mapping) for i in 1:length(S)], S.character_space)
 
 function invert!(self::Substitution)
     self.mapping = [findfirst(==(i), S.mapping) for i in 1:length(S)]
@@ -67,7 +67,8 @@ end
 # Compounds two Substitutions to make one new
 function +(a::Substitution, b::Substitution)
     @assert length(a) == length(b) "Substitutions must have the same length"
-    Substitution([b[i] for i in a.mapping])
+    @assert a.character_space == b.character_space "Character spaces must be the same"
+    Substitution([b[i] for i in a.mapping], b.character_space)
 end
 
 -(a::Substitution, b::Substitution) = a + invert(b)
@@ -82,7 +83,7 @@ end
 # Shifts S mapping by c (mod length(S))
 function shift(S::Substitution, c::Int) ::Substitution
     c = mod(c, length(S))
-    return Substitution(vcat(S.mapping[c+1:end], S.mapping[1:c]))
+    return Substitution(vcat(S.mapping[c+1:end], S.mapping[1:c]), S.character_space)
 end
 
 function shift!(self::Substitution, c::Int)
@@ -101,7 +102,7 @@ end
 
 
 function switch(S::Substitution, posa::Integer, posb::Integer) ::Substitution
-    return Substitution(switch!(copy(S.mapping), posa, posb))
+    return Substitution(switch!(copy(S.mapping), posa, posb), S.character_space)
 end
 
 function switch!(S::Substitution, posa::Integer, posb::Integer)
