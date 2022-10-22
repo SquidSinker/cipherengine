@@ -21,6 +21,10 @@ end
 
 # Limiting function taking (-inf, inf) -> (-p_old, p_new)
 function update_delta(delta_fitness, p_old, p_new, rate)
+    if (p_old <= 1e-320) || (p_new <= 1e-230)
+        return 0.0
+    end
+
     mu = (p_new + p_old) # division by 2 carried out at the end
     diff = (p_new - p_old) # division by 2 carried out at the end
 
@@ -35,11 +39,11 @@ function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::
     dA = update_delta(delta_fitness, PosProbMat[tokenA, posA], PosProbMat[tokenA, posB], reinforce_rate)
     dB = update_delta(delta_fitness, PosProbMat[tokenB, posB], PosProbMat[tokenB, posA], reinforce_rate)
 
-    PosProbMat[tokenA, posA] -= dA
-    PosProbMat[tokenA, posB] += dA
+    PosProbMat[tokenA, posA] += dA
+    PosProbMat[tokenA, posB] -= dA
 
-    PosProbMat[tokenB, posB] -= dB
-    PosProbMat[tokenB, posA] += dB
+    PosProbMat[tokenB, posB] += dB
+    PosProbMat[tokenB, posA] -= dB
 end
 
 
@@ -60,7 +64,7 @@ function new_PosProbMat(vect::Vector{Int}, W::CSpace, known_freq::Vector)
     n = length(W.tokenisation)
 
     # init PosProbMat as binomial guesses
-    Tallies = [count(x -> isequal(x, i), vect) for i in 1:n]
+    Tallies = [count(==(i), vect) for i in 1:n]
 
     PosProbMat = hcat([normalise(normal_approx_pd.(i, L, known_freq)) for i in Tallies]...)
 
@@ -92,7 +96,7 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
     end
 
 
-    indices = Tuple.(keys(Draw_Matrix))
+    indices = Tuple.(keys(Draw_Matrix)) # THIS IS CALLES EVERY TIME AND IS THE SAME EVERY TIME (static var)
 
     for _ in 1:number
         (a, n) = sample(indices, Weights(vec( Draw_Matrix )))
@@ -115,7 +119,7 @@ end
 
 
 
-
+using Plots
 
 function linear_reinforcement(
     vtoken::Vector{Int},
@@ -125,9 +129,9 @@ function linear_reinforcement(
     ChoiceWeights::Function,
     fitness::Function;
     known_freq::Vector = nothing,
-    reinforce_rate = 1
+    reinforce_rate = 0.5
 )
-    P = new_PosProbMat(vtoken, W, known_freq)
+    P = new_PosProbMat(vtoken, W)
 
     apply_to_text(s) = invert(s)(vtoken)
 
@@ -136,7 +140,8 @@ function linear_reinforcement(
 
     n = length(W.tokenisation)
 
-    for gen in 1:generations
+    plot()
+    anim = @animate for gen in 1:generations
         swaps = generate_swaps(parent_sub, P, ChoiceWeights(gen, F, n), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
         delta_F = fitness.(apply_to_text.(new_substitutions)) .- F
@@ -148,8 +153,12 @@ function linear_reinforcement(
         # Set new parent and fitness
         parent_sub = new_substitutions[argmax(delta_F)]
         F += maximum(delta_F)
-    end
+
+
+        heatmap(P, clims = (0,1))
+    end every 10
     
+    gif(anim, "anim.gif")
 
     return P, parent_sub # Reinforced Matrix // final Substitution in lineage
 end

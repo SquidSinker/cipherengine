@@ -49,4 +49,7 @@ using JLD2
 engf = [english_frequencies[i] for i in 1:length(keys(english_frequencies))]
 
 
-linear_reinforcement(c, W, 100, 10, Choice_Weights, quadgramlog; known_freq = engf)
+linear_reinforcement(c, W, 1500, 10, Choice_Weights, quadgramlog; known_freq = engf, reinforce_rate = 4)
+# values in Pij are exceeding 1 (floating point??)
+# if p_old == 0.0 in the update_delta, it is stuck there forever
+# if p_old or p_new is sufficiently small, floating point propagates and the argument of atanh is abs greater than 1
