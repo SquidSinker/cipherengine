@@ -40,8 +40,9 @@ length(S::Substitution) = length(S.mapping) :: Int
 
 
 function show(io::IO, S::Substitution)
-    println("\n", length(S), "-element Substitution{Char}:")
-    print(join(S.mapping, " "))
+    println("\n", length(S), "-element Substitution:")
+    println(join(collect(1:length(S)), " "))
+    println(join(S.mapping, " "))
 end
 
 
@@ -54,10 +55,10 @@ getindex(S::Substitution, i::Int) = S.mapping[i] ::Int
 
 
 # if S: i -> j     invert(S): j -> i
-invert(S::Substitution) = Substitution([findfirst(x -> isequal(x, i), S) for i in 1:length(S)])
+invert(S::Substitution) = Substitution([findfirst(==(i), S.mapping) for i in 1:length(S)])
 
 function invert!(self::Substitution)
-    self.mapping = [findfirst(x -> isequal(x, i), S) for i in 1:length(S)]
+    self.mapping = [findfirst(==(i), S.mapping) for i in 1:length(S)]
     self
 end
 
