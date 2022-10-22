@@ -9,7 +9,7 @@ The only admitted tokens are integers (aka. preprocessed character space)
 
 
 
-import Base.length, Base.show, Base.+, Base.-, Base.*, Base.==, Base.getindex, LinearAlgebra.dot
+import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex
 include("charspace.jl")
 # Substitution FRAMEWORK
 
