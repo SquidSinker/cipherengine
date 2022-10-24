@@ -139,6 +139,7 @@ function linear_reinforcement(
         P = new_PosProbMat(vtoken, W, known_freq)
 
         parent_sub = frequency_matched_substitution(vtoken, W, known_freq)
+        invert!(parent_sub)
     else
         P = new_PosProbMat(W)
 

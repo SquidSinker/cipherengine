@@ -38,6 +38,7 @@ function sort_by_values(d::Dict)
 end
 # Returns Vector sorting elements of Dict in increasing value order
 
+# Finds forwards substitution
 function frequency_matched_substitution(vtoken::Vector, W::CSpace, ref_frequencies::Dict)
     f = sort_by_values(frequencies(vtoken)) # vector of token indices (Ints) sorted in ascending frequencies
     for i in 1:length(W.tokenised)
@@ -49,7 +50,7 @@ function frequency_matched_substitution(vtoken::Vector, W::CSpace, ref_frequenci
 
     ref_frequencies = sort_by_values(ref_frequencies)
 
-    return Substitution([f[findfirst(x -> isequal(x,i), ref_frequencies)] for i in 1:26], W) # starts with letters arranged by frequencies against english_frequencies
+    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], W) # starts with letters arranged by frequencies against english_frequencies
 end
 
 
