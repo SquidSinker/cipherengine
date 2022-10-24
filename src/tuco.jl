@@ -86,7 +86,7 @@ end
 
 
 
-
+using JLD2
 @load "quadgram_score_dict.jld2" quadgram_scores
 
 const nullfitness = log10(0.1/4224127912)
