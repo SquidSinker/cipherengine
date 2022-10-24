@@ -100,13 +100,13 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
 
     indices = Tuple.(keys(Draw_Matrix)) # THIS IS CALLES EVERY TIME AND IS THE SAME EVERY TIME (static var)
 
-    for _ in 1:number
+    for i in 1:number
         (a, n) = sample(indices, Weights(vec( Draw_Matrix )))
 
         b = S[n] # 'b' is already at n
         m = findfirst(==(a), S.mapping) # m is original pos of 'a'
 
-        out[_] = (a, b, m, n)
+        out[i] = (a, b, m, n)
 
         # Stop them being chosen again
         Draw_Matrix[a, n] = 0
