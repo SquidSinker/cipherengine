@@ -21,7 +21,7 @@ end
 
 # Limiting function taking (-inf, inf) -> (-p_old, p_new)
 function update_delta(delta_fitness, p_old, p_new, rate)
-    if (p_old <= 1e-320) || (p_new <= 1e-230)
+    if (p_old <= 1e-320) || (p_new <= 1e-320)
         return 0.0
     end
 
@@ -50,7 +50,7 @@ end
 
 
 
-function new_PosProbMat(vect::Vector{Int}, W::CSpace)
+function new_PosProbMat(W::CSpace)
     n = length(W.tokenised)
 
     # uniform weighting
@@ -88,7 +88,7 @@ using StatsBase # for sample()
 
 function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int) ::Vector{Tuple{Int64, Int64, Int64, Int64}}
 
-    out = Vector{Tuple{Int64, Int64, Int64, Int64}}()
+    out = Vector{Tuple{Int64, Int64, Int64, Int64}}(undef, number)
 
     Draw_Matrix = PosProbMat .* ChoiceWeights # Broadcast multiply along FIRST (vertical) dimension
 
@@ -133,14 +133,16 @@ function linear_reinforcement(
     known_freq::Dict = nothing,
     reinforce_rate = 0.5
 )
-    P = new_PosProbMat(vtoken, W, known_freq)
-
     apply_to_text(s) = (s)(vtoken)
 
     if known_freq != nothing
+        P = new_PosProbMat(W)
+
         parent_sub = frequency_matched_substitution(vtoken, W, known_freq)
         invert!(parent_sub)
     else
+        P = new_PosProbMat(vtoken, W, known_freq)
+
         parent_sub = Substitution(W)
     end
 
