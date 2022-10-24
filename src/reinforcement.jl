@@ -106,7 +106,7 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
         b = S[n] # 'b' is already at n
         m = findfirst(==(a), S.mapping) # m is original pos of 'a'
 
-        push!(out, (a, b, m, n))
+        out[_] = (a, b, m, n)
 
         # Stop them being chosen again
         Draw_Matrix[a, n] = 0
@@ -128,7 +128,7 @@ function linear_reinforcement(
     W::CSpace,
     generations::Int,
     spawns::Int,
-    ChoiceWeights::Function,
+    choice_weights::Function,
     fitness::Function;
     known_freq::Dict = nothing,
     reinforce_rate = 0.5
@@ -151,9 +151,9 @@ function linear_reinforcement(
 
     n = length(W.tokenised)
 
-    plot()
+
     anim = @animate for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, ChoiceWeights(gen, F, n), spawns)
+        swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, n), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
         delta_F = fitness.(apply_to_text.(new_substitutions)) .- F
 
