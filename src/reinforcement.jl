@@ -139,7 +139,6 @@ function linear_reinforcement(
         P = new_PosProbMat(vtoken, W, known_freq)
 
         parent_sub = frequency_matched_substitution(vtoken, W, known_freq)
-        invert!(parent_sub)
     else
         P = new_PosProbMat(W)
 
@@ -170,6 +169,11 @@ function linear_reinforcement(
 
         heatmap(P, clims = (0,1))
     end every 10
+
+
+    println(sum(P; dims = 1), sum(P; dims = 2))
+
+
     
     gif(anim, "anim.gif")
 
