@@ -1,3 +1,6 @@
+import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex
+include("charspace.jl")
+
 #=
 
 The Substitutionstitution object holds a Vector, where the ith entry is the token that Substitutionstitutes i in the cipher
@@ -7,11 +10,6 @@ The only admitted tokens are integers (aka. preprocessed character space)
 
 
 
-
-
-import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex
-include("charspace.jl")
-# Substitution FRAMEWORK
 
 
 
@@ -29,9 +27,20 @@ end
 
 
 # Init Substitution from string
-function sub_from_string(string::String, W::CSpace) ::Substitution
+function substitution_from_string(string::String, W::CSpace) ::Substitution
+    if !W.case_sensitive
+        string = lowercase(string)
+    end
+
     @assert issetequal(string, W.tokenised) "String substitutions must contain all tokenised characters only once"
     return Substitution([findfirst(==(i), W.tokenised) for i in string], W)
+end
+
+
+
+# Identity substitution constructor
+function Substitution(W::CSpace)
+    return Substitution(collect(1:length(W.tokenised)), W)
 end
 
 
@@ -59,7 +68,7 @@ getindex(S::Substitution, i::Int) = S.mapping[i] ::Int
 invert(S::Substitution) = Substitution([findfirst(==(i), S.mapping) for i in 1:length(S)], S.character_space)
 
 function invert!(self::Substitution)
-    self.mapping = [findfirst(==(i), S.mapping) for i in 1:length(S)]
+    self.mapping = [findfirst(==(i), self.mapping) for i in 1:length(self)]
     self
 end
 
@@ -80,23 +89,17 @@ function (S::Substitution)(vtoken::Vector{Int}) ::Vector{Int}
 end
 
 
-# Shifts S mapping by c (mod length(S))
-function shift(S::Substitution, c::Int) ::Substitution
-    c = mod(c, length(S))
-    return Substitution(vcat(S.mapping[c+1:end], S.mapping[1:c]), S.character_space)
-end
 
-function shift!(self::Substitution, c::Int)
-    c = mod(c, length(self))
-    self.mapping = vcat(self.mapping[c+1:end], self.mapping[begin:c])
-    self
+function shift!(self::Substitution, shift::Int)
+    self.mapping = circshift(self.mapping, shift)
+    return self
 end
 
 
 # Switches two entries at posa posb in any Vector
 function switch!(self::AbstractVector, posa::Integer, posb::Integer)
     self[posa], self[posb] = self[posb], self[posa]
-    self
+    return self
 end
 
 
@@ -107,7 +110,7 @@ end
 
 function switch!(S::Substitution, posa::Integer, posb::Integer)
     S.mapping = switch!(copy(S.mapping), posa, posb)
-    S
+    return S
 end
 
 

@@ -27,10 +27,11 @@ W = Alphabet(false)
 
 
 
-S = sub_from_alphabet("ABKLMNOPQCRSVZHIJDEFGWXYUT")
+#S = substitution_from_string("ABKLMNOPQCRSVZHIJDEFGWXYUT", W)
+S = Substitution(W)
 c = S(v)
 
-show(S)
+@show S
 
 
 
@@ -46,10 +47,12 @@ end
 using JLD2
 @load "english_monogram_frequencies.jld2" english_frequencies
 
-engf = [english_frequencies[i] for i in 1:length(keys(english_frequencies))]
 
-
-linear_reinforcement(c, W, 1500, 10, Choice_Weights, quadgramlog; known_freq = engf, reinforce_rate = 4)
+(cracked, PMatrix, fitnesses) = linear_reinforcement(c, W, 1500, 10, Choice_Weights, quadgramlog; known_freq = english_frequencies, reinforce_rate = 0.5)
 # values in Pij are exceeding 1 (floating point??)
 # if p_old == 0.0 in the update_delta, it is stuck there forever
 # if p_old or p_new is sufficiently small, floating point propagates and the argument of atanh is abs greater than 1
+
+
+using Plots
+plot(fitnesses)

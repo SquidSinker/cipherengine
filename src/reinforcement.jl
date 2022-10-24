@@ -59,9 +59,11 @@ function new_PosProbMat(vect::Vector{Int}, W::CSpace)
     return PosProbMat
 end
 
-function new_PosProbMat(vect::Vector{Int}, W::CSpace, known_freq::Vector)
+function new_PosProbMat(vect::Vector{Int}, W::CSpace, known_freq::Dict)
     L = length(vect)
     n = length(W.tokenised)
+
+    known_freq = [known_freq[i] for i in 1:length(W.tokenised)]
 
     # init PosProbMat as binomial guesses
     Tallies = [count(==(i), vect) for i in 1:n]
@@ -128,15 +130,22 @@ function linear_reinforcement(
     spawns::Int,
     ChoiceWeights::Function,
     fitness::Function;
-    known_freq::Vector = nothing,
+    known_freq::Dict = nothing,
     reinforce_rate = 0.5
 )
-    P = new_PosProbMat(vtoken, W)
+    P = new_PosProbMat(vtoken, W, known_freq)
 
-    apply_to_text(s) = invert(s)(vtoken)
+    apply_to_text(s) = (s)(vtoken)
 
-    parent_sub = eng_frequency_matched_substitution(vtoken)
+    if known_freq != nothing
+        parent_sub = frequency_matched_substitution(vtoken, W, known_freq)
+        invert!(parent_sub)
+    else
+        parent_sub = Substitution(W)
+    end
+
     F = fitness(apply_to_text(parent_sub))
+    fitness_log = [F]
 
     n = length(W.tokenised)
 
@@ -154,13 +163,17 @@ function linear_reinforcement(
         parent_sub = new_substitutions[argmax(delta_F)]
         F += maximum(delta_F)
 
+        push!(fitness_log, F)
+
 
         heatmap(P, clims = (0,1))
     end every 10
     
     gif(anim, "anim.gif")
 
-    return P, parent_sub # Reinforced Matrix // final Substitution in lineage
+    invert!(parent_sub)
+
+    return P, parent_sub, fitness_log # Reinforced Matrix // final Substitution in lineage // Vector of fitness values vs generations
 end
 
 

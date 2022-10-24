@@ -28,28 +28,28 @@ end
 
 
 
-using JLD2
-@load "english_monogram_frequencies.jld2" english_frequencies
-# Dict with i => j where i is the token index and j is the frequency
+# using JLD2
+# @load "english_monogram_frequencies.jld2" english_frequencies
+# # Dict with i => j where i is the token index and j is the frequency
 
 function sort_by_values(d::Dict)
     a = sort(collect(d), by = x -> x[2])
     return getindex.(a, 1)
 end
+# Returns Vector sorting elements of Dict in increasing value order
 
-eng = sort_by_values(english_frequencies)
-# Returns Vector sorting elements of english_frequencies in increasing frequency order
-
-function eng_frequency_matched_substitution(vtoken::Vector)
+function frequency_matched_substitution(vtoken::Vector, W::CSpace, ref_frequencies::Dict)
     f = sort_by_values(frequencies(vtoken)) # vector of token indices (Ints) sorted in ascending frequencies
-    for i in 1:26
+    for i in 1:length(W.tokenised)
         if !(i in f)
             insert!(f, 1, i)
         end
     end
     # Appends any tokens that did not appear
 
-    return Substitution([f[findfirst(x -> isequal(x,i), eng)] for i in 1:26]) # starts with letters arranged by frequencies against english_frequencies
+    ref_frequencies = sort_by_values(ref_frequencies)
+
+    return Substitution([f[findfirst(x -> isequal(x,i), ref_frequencies)] for i in 1:26], W) # starts with letters arranged by frequencies against english_frequencies
 end
 
 
