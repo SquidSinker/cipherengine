@@ -75,3 +75,16 @@ function find_period(data::Vector, upper_lim::Int; mode = "best") ::Int
 
     return argmin(errors)
 end
+
+function lengthstats(vtoken::Vector{Int64}, checklim::Int64, printing=false)
+    factors = []
+    for i in 1:checklim
+        if mod(length(vtoken), i) == 0
+            push!(factors,i)
+        end
+    end
+    if printing
+        println(factors)
+    end
+    return factors
+end
