@@ -1,4 +1,4 @@
-import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex, Base.setindex!
+import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex, Base.setindex!, Base.show
 
 # a case-insensitive text will be converted to uppercase so use uppercase for case-insensitive CSpaces
 struct CSpace
@@ -6,13 +6,17 @@ struct CSpace
     n::Int
     size::Int
     tokens::Vector{Int}
+
     function CSpace(chars::Vector{String})
         uchars = unique(chars)
-        ngram_size = length(uchars[1])
-        if any(length.(uchars) .!= ngram_size)
+        size = length(uchars)
+
+        ngram_size = length(uchars[1]) # get size of first char
+        if any(length.(uchars) .!= ngram_size) # check all sizes are the same
             error("Each character in a CSpace must be the same length")
         end
-        new(uchars, ngram_size, length(uchars), 1:length(uchars))
+
+        new(uchars, ngram_size, size, collect(1:size))
     end
 end
 
@@ -22,30 +26,41 @@ CSpace(W::CSpace) = W
 
 ==(W1::CSpace, W2::CSpace) = W1.chars == W2.chars
 
-function union(W1::CSpace, W2::CSpace)
+function union(W1::CSpace, W2::CSpace) ::CSpace
     if W1.n != W2.n 
         error("Cannot combine CSpaces with different character lengths")
     end
     return CSpace(unique(vcat(W1.chars, W2.chars)))
 end
 
-function combine(W1::CSpace, W2::CSpace)
-    new_chars = Vector{String}()
+function combine(W1::CSpace, W2::CSpace) ::CSpace
+    new_chars = Vector{String}(undef, W1.size * W2.size)
+
+    e = 1
     for i in W1.chars
         for j in W2.chars
-            push!(new_chars, i * j)
+            new_chars[e] = i * j
+            e += 1
         end
     end
     return CSpace(new_chars)
 end
 
-ngramify(W::CSpace, n::Int) = n == 1 ? W : combine(W, ngramify(W, n - 1))
-digramify(W::CSpace) = ngramify(W, 2)
+ngramify(W::CSpace, n::Int) ::CSpace = n == 1 ? W : combine(W, ngramify(W, n - 1))
+digramify(W::CSpace) ::CSpace = ngramify(W, 2)
 
-+(W1::CSpace, W2::CSpace) = union(W1, W2)
-*(W1::CSpace, W2::CSpace) = combine(W1, W2)
-^(W::CSpace, n::Int) = ngramify(W, n)
++(W1::CSpace, W2::CSpace) ::CSpace = union(W1, W2)
+*(W1::CSpace, W2::CSpace) ::CSpace = combine(W1, W2)
+^(W::CSpace, n::Int) ::CSpace = ngramify(W, n)
 
+function show(io::IO, W::CSpace)
+    show(io, W.chars)
+end
+
+function show(io::IO, ::MIME"text/plain", W::CSpace)
+    println(io, "$(W.size)-element $(W.n)-gram Character Space")
+    show(io, W.chars)
+end
 
 mutable struct Txt
     raw::String
@@ -59,9 +74,9 @@ mutable struct Txt
     Txt(text, case_sensitive = false) = new(text, case_sensitive, isuppercase.(collect(text)), nothing, nothing, nothing, false)
 end
 
-length(txt::Txt) = !isnothing(txt.tokenised) ? length(txt.tokenised) : error("Txt has not been tokenised")
+length(txt::Txt) ::Int = txt.is_tokenised ? length(txt.tokenised) : error("Txt has not been tokenised")
 
-function ==(T1::Txt, T2::Union{Txt, Vector{Int}})
+function ==(T1::Txt, T2::Union{Txt, Vector{Int}}) ::Bool
     if !T1.is_tokenised
         error("Untokenised Txt objects cannot be compared")
     end
@@ -77,7 +92,7 @@ function ==(T1::Txt, T2::Union{Txt, Vector{Int}})
     return T1.tokenised == V2
 end
 
-==(T1::Vector{Int}, T2::Txt) = ==(T2, T1)
+==(T1::Vector{Int}, T2::Txt) ::Bool = ==(T2, T1)
 
 iterate(txt::Txt) = txt.is_tokenised ? iterate(txt.tokenised) : error("Untokenised Txt objects cannot be iterated")
 iterate(txt::Txt, state::Int) = iterate(txt.tokenised, state)
@@ -85,7 +100,7 @@ getindex(txt::Txt, i::Int) = txt.is_tokenised ? txt.tokenised[i] : error("Cannot
 setindex!(txt::Txt, X, i::Int) = txt.is_tokenised ? txt.tokenised[i] = X : error("Cannot set index of untokenised Txt")
 
 
-function tokenise(txt::Txt, W::CSpace)
+function tokenise(txt::Txt, W::CSpace) ::Tuple{Vector{Int}, Dict{Int, String}}
 
     if !txt.case_sensitive && join(W.chars) != uppercase(join(W.chars))
         error("Case-insensitive text cannot be tokenised by a case-sensitive CSpace")
@@ -97,20 +112,22 @@ function tokenise(txt::Txt, W::CSpace)
 
     while length(text) > 0
         char_index = findfirst(startswith.(text, W.chars))
-        if isnothing(char_index)
+
+        if isnothing(char_index) # if text doesn't start with any of W.chars
             frozen[length(tokenised)] = get(frozen, length(tokenised), "") * text[1]
-            text = text[2:end]
+            text = text[2:end] # shave text by 1
             continue
         end
-        push!(tokenised, char_index)
-        text = text[W.n+1:end]
+
+        push!(tokenised, char_index) # add token to tokenised
+        text = text[W.n+1:end] # shave text by n
     end
 
     return tokenised, frozen
 end
 
 
-function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true)
+function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::String
 
     if !txt.is_tokenised
         error("Text which hasn't been tokenised can't be untokenised")
@@ -140,15 +157,17 @@ function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_froze
 end
 
 
-function tokenise!(txt::Txt, W::CSpace)
+function tokenise!(txt::Txt, W::CSpace) ::Txt
     tokenised, frozen = tokenise(txt, W)
     txt.CSpace = W
     txt.frozen = frozen
     txt.is_tokenised = true
     txt.tokenised = tokenised
+
+    return txt
 end
 
-function untokenise!(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true)
+function untokenise!(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::Txt
     raw = untokenise(txt, W, restore_case = restore_case)
     txt.CSpace = nothing
     txt.tokenised = nothing
@@ -156,6 +175,8 @@ function untokenise!(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_froz
     txt.cases = isuppercase.(collect(raw))
     txt.is_tokenised = false
     txt.raw = raw
+
+    return txt
 end
 
 
