@@ -10,7 +10,7 @@ TUCO handles all statistical stuff, including fitness statistics
 
 # FREQUENCY
 
-function frequencies(txt::String)
+function frequencies(txt::String) ::Dict{Char, Float64}
     W = unique(txt)
 
     freq = [count(isequal(i), txt) for i in W] / length(txt)
@@ -18,19 +18,39 @@ function frequencies(txt::String)
     return Dict(W .=> freq)
 end
 
-function frequencies(vtoken::Vector{Int})
-    W = unique(vtoken)
 
-    freq = [count(isequal(i), vtoken) for i in W] / length(vtoken)
 
-    return Dict(W .=> freq)
+function appearances(token::Int, txt::Txt) ::Int
+    if !txt.is_tokenised
+        error("Cannot count token appearances in untokenised Txt")
+    end
+
+    return count(==(token), txt.tokenised)
 end
 
 
 
-# using JLD2
-# @load "english_monogram_frequencies.jld2" english_frequencies
-# # Dict with i => j where i is the token index and j is the frequency
+
+function vector_frequencies(txt::Txt) ::Vector{Float64}
+    if !txt.is_tokenised
+        error("Cannot take token frequencies of untokenised Txt")
+    end
+
+    return appearances.(txt.character_space.tokens, Ref(txt)) / length(txt)
+end
+
+function frequencies(txt::Txt) ::Dict{Int, Float64}
+    freq = vector_frequencies(txt)
+    return Dict(txt.character_space.tokens .=> freq)
+end
+
+
+
+
+
+function to_dict(vect::Vector{T}) ::Dict{Int, T} where{T}
+    return Dict(collect(1:length(vect)) .=> vect)
+end
 
 function sort_by_values(d::Dict)
     a = sort(collect(d), by = x -> x[2])
@@ -38,19 +58,51 @@ function sort_by_values(d::Dict)
 end
 # Returns Vector sorting elements of Dict in increasing value order
 
+
+
 # Finds forwards substitution
-function frequency_matched_substitution(vtoken::Vector, W::CSpace, ref_frequencies::Dict)
-    f = sort_by_values(frequencies(vtoken)) # vector of token indices (Ints) sorted in ascending frequencies
-    for i in 1:length(W.tokenised)
-        if !(i in f)
-            insert!(f, 1, i)
-        end
+function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float64})
+    f = sort_by_values(frequencies(txt)) # vector of token indices (Ints) sorted in ascending frequencies
+
+    ref_frequencies = sort_by_values(to_dict(ref_frequencies))
+
+    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], W) # starts with letters arranged by frequencies against ref_frequencies
+end
+
+
+
+
+
+
+
+function orthodot(txt::Txt, ref_frequencies::Vector{Float64}) ::Float64
+    frequencies = vector_frequencies(txt)
+
+    magnitude = sum(frequencies .^ 2) * sum(ref_frequencies .^ 2)
+
+    return sum(frequencies .* ref_frequencies) / sqrt(magnitude)
+end
+
+
+
+using JLD2
+@load "quadgram_score_dict.jld2" quadgram_scores
+
+const nullfitness = log10(0.1/4224127912)
+
+function quadgramlog(txt::Txt) ::Float64
+    if txt.CSpace != Alphabet_CSpace
+        error("Quadgramlog fitness only works on Alphabet_CSpace")
     end
-    # Appends any tokens that did not appear
 
-    ref_frequencies = sort_by_values(ref_frequencies)
+    L = length(txt) - 3
 
-    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], W) # starts with letters arranged by frequencies against english_frequencies
+    score = 0.0
+    for _ in 1:L
+        score += get(quadgrams, txt[i:(i+3)], nullfitness)
+    end
+
+    return score / L
 end
 
 
@@ -59,12 +111,18 @@ end
 
 
 
-function orthodot(freq1::Dict, freq2::Dict)
-    V1, V2 = [values(freq1)], [values(freq2)]
-    k = intersect(keys(freq1),keys(freq2))
-    v1, v2 = [freq[i] for i in k], [freq2[i] for i in k]
-    return dot(v1, v2)/sqrt(dot(V1, V1)*dot(V2, V2))
-end
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,26 +144,6 @@ end
 
 
 
-
-using JLD2
-@load "quadgram_score_dict.jld2" quadgram_scores
-
-const nullfitness = log10(0.1/4224127912)
-
-function quadgramlog(vtoken::Vector{Int}; quadgrams::Dict = quadgram_scores)
-    @assert length(unique(vtoken)) <= 26
-
-    k = keys(quadgrams)
-
-    score = 0
-    for i in 1:(length(vtoken)-3)
-        gram = vtoken[i:(i+3)]
-        if gram in k
-            score += quadgrams[gram]
-        else
-            score += nullfitness
-        end
-    end
-
-    return score / (length(vtoken) - 3)
-end
+# using JLD2
+# @load "english_monogram_frequencies.jld2" eng
+# # Vector with v[i] = j is the token index and j is the frequency

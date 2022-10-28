@@ -82,7 +82,7 @@ end
 
 # initialises PosProbMat guessing the INVERSE substitution
 function new_PosProbMat(W::CSpace) ::Matrix
-    n = length(W.tokenised)
+    n = W.size
 
     # uniform weighting, row-summing to 1
     PosProbMat = ones((n, n)) / n
@@ -91,21 +91,17 @@ function new_PosProbMat(W::CSpace) ::Matrix
 end
 
 # initialises PosProbMat guessing the INVERSE substitution
-function new_PosProbMat(vect::Vector{Int}, W::CSpace, known_freq::Dict) ::Matrix
+function new_PosProbMat(txt::Vector{Int}, ref_freq::Vector{Float64}) ::Matrix
     L = length(vect)
-    n = length(W.tokenised)
-
-    # turn Dict to Vector, sorting by keys (1:n)
-    known_freq = [known_freq[i] for i in 1:n]
 
     # total appearances of each token, stored as Vector
-    Tallies = [count(==(i), vect) for i in 1:n]
+    tallies = appearances.(txt.character_space.tokens, Ref(txt))
 
     # init PosProbMat with Binomial guesses
     # Compare each known frequency against ALL token frequencies, find p(token_f = known_f)
     # The comparison is done this way round to predict the INVERSE substitution
     # Normalise these rows, so they sum to 1
-    PosProbMat = vcat(permutedims.([normalise(normal_approx_pd.(Tallies, L, i)) for i in known_freq])...)
+    PosProbMat = vcat(permutedims.([normalise(normal_approx_pd.(tallies, L, i)) for i in ref_freq])...)
 
     return PosProbMat
 end
@@ -169,46 +165,40 @@ using Plots
 # Substitution solver, where ppM supervises a single substitution lineage
 function debug_linear_reinforcement(
     target::Substitution,
-    vtoken::Vector{Int},
-    W::CSpace,
+    txt::Txt,
     generations::Int,
     spawns::Int,
     choice_weights::Function,
     fitness::Function,
-    known_freq::Union{Dict, Nothing} = nothing,
+    ref_freq::Union{Vector{Float64}, Nothing} = nothing,
     reinforce_rate::Float64 = 0.5;
     lineage_habit::String = "ascent"
 )
-    # function to apply substitution to tokens, for broadcasting purposes
-    apply_to_text(s) = (s)(vtoken)
 
 
 
-
-    if isnothing(known_freq) # if not given, start with identity substitution and uniform ppM
+    if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
         P = new_PosProbMat(W)
 
         parent_sub = Substitution(W)
 
     else # if given, use best guesses for ppM and substitution
-        P = new_PosProbMat(vtoken, W, known_freq)
+        P = new_PosProbMat(txt, ref_freq)
 
-        parent_sub = frequency_matched_substitution(vtoken, W, known_freq) # guesses FORWARDS substitution
+        parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
         invert!(parent_sub)
     end
 
 
-    F = fitness(apply_to_text(parent_sub))
+    F = fitness(apply(parent_sub, txt))
     fitness_log = [F]
     div_log = [PosProbMat_divergence(target, P)]
-
-    n = length(W.tokenised)
 
 
     anim = @animate for gen in 1:generations
         swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, n), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = fitness.(apply_to_text.(new_substitutions)) .- F
+        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- F
         # generates new swaps from ppM and calculates dF
 
 
@@ -268,44 +258,36 @@ end
 
 # Substitution solver, where ppM supervises a single substitution lineage
 function linear_reinforcement(
-    vtoken::Vector{Int},
-    W::CSpace,
+    txt::Txt,
     generations::Int,
     spawns::Int,
     choice_weights::Function,
     fitness::Function,
-    known_freq::Union{Dict, Nothing} = nothing,
+    ref_freq::Union{Vector{Float64}, Nothing} = nothing,
     reinforce_rate::Float64 = 0.5;
     lineage_habit::String = "ascent"
 )
-    # function to apply substitution to tokens, for broadcasting purposes
-    apply_to_text(s) = (s)(vtoken)
 
 
-
-
-    if isnothing(known_freq) # if not given, start with identity substitution and uniform ppM
+    if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
         P = new_PosProbMat(W)
 
         parent_sub = Substitution(W)
 
     else # if given, use best guesses for ppM and substitution
-        P = new_PosProbMat(vtoken, W, known_freq)
+        P = new_PosProbMat(txt, ref_freq)
 
-        parent_sub = frequency_matched_substitution(vtoken, W, known_freq) # guesses FORWARDS substitution
+        parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
         invert!(parent_sub)
     end
 
 
-    F = fitness(apply_to_text(parent_sub))
-
-    n = length(W.tokenised)
-
+    F = fitness(apply(parent_sub, txt))
 
     for gen in 1:generations
         swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, n), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = fitness.(apply_to_text.(new_substitutions)) .- F
+        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- F
         # generates new swaps from ppM and calculates dF
 
 

@@ -21,15 +21,15 @@ In our busy modern lives we have largely forgotten that language is meant to be 
 
 
 
-W = Alphabet(false)
-(v, cases) = tokenise(text, W)
+txt = Txt(text)
+tokenise!(txt, Alphabet_CSpace)
 
 
 
 
-#S = substitution_from_string("ABKLMNOPQCRSVZHIJDEFGWXYUT", W)
-S = Substitution(W)
-c = S(v)
+S = Substitution("ABKLMNOPQCRSVZHIJDEFGWXYUT", Alphabet_CSpace)
+#S = Substitution(Alphabet_CSpace)
+apply!(S, txt)
 
 @show S
 
@@ -48,11 +48,11 @@ using JLD2
 @load "english_monogram_frequencies.jld2" english_frequencies
 
 
-(cracked, PMatrix, fitnesses) = linear_reinforcement(c, W, 1500, 10, Choice_Weights, quadgramlog; known_freq = english_frequencies, reinforce_rate = 0.5)
-# values in Pij are exceeding 1 (floating point??)
-# if p_old == 0.0 in the update_delta, it is stuck there forever
-# if p_old or p_new is sufficiently small, floating point propagates and the argument of atanh is abs greater than 1
+using BenchmarkTools
+@btime (PMatrix, cracked) = linear_reinforcement(txt, 100, 10, Choice_Weights, quadgramlog, english_frequencies, 3.0; lineage_habit = "floored ascent")
 
 
-using Plots
-plot(fitnesses)
+
+# (PMatrix, cracked, fitnesses, divergences) = linear_reinforcement(S, c, W, 100, 10, Choice_Weights, quadgramlog, english_frequencies, 3.0; lineage_habit = "floored ascent")
+# plot(fitnesses, label = "S fitness")
+# plot!(divergences, label = "ppM divergence")
