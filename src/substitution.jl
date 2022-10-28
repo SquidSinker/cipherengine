@@ -156,3 +156,14 @@ end
 function mutate!(S::Substitution, slice::Tuple{Int, Int} = (1, length(S))) ::Substitution
     switch!(S, rand(slice[1]:slice[2]), rand(1:length(S)))
 end
+
+
+
+
+# Presets
+function Atbash(args) ::Substitution
+    s = Substitution(args)
+    reverse!(s.mapping)
+
+    return s
+end
