@@ -88,3 +88,25 @@ function lengthstats(vtoken::Vector{Int64}, checklim::Int64, printing=false)
     end
     return factors
 end
+
+#rolling avg implementation:
+#=
+window = int size of averaging window
+for every token, take the mean of the neigbouring windowsize tokens
+start from 1+kth token end at length-kth token 
+
+=#
+function rollavg(vtoken::Vector{Int64},#=W::Vector{Int64},=# W::CSpace, window::Int64)
+    println("AMONGUS")
+    tokens = W.tokens
+    #tokens = W
+    avglist = []
+    for t in tokens
+        tavglist = []
+        for i in 1:(length(vtoken)-(window))
+            push!(tavglist, count(x->x==t,vtoken[i:i+(window-1)]))
+        end
+        push!(avglist,tavglist)
+    end
+    return avglist
+end
