@@ -110,3 +110,13 @@ function rollavg(vtoken::Vector{Int64},#=W::Vector{Int64},=# W::CSpace, window::
     end
     return avglist
 end
+
+function entropy(vtoken::Vector{Int64}, W::CSpace)
+    etp = 0
+    for t in W.tokens
+        n = count(x->x==t,vtoken)/length(vtoken)
+        n = -n*log(2.71,n)
+        etp+=n
+    end
+    etp /= length(W.tokens)
+end
