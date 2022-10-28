@@ -58,7 +58,7 @@ function show(io::IO, W::CSpace)
 end
 
 function show(io::IO, ::MIME"text/plain", W::CSpace)
-    println(io, "$(W.size)-element $(W.n)-gram Character Space")
+    println(io, "$(W.size)-element $(W.n)-gram Character Space:")
     show(io, W.chars)
 end
 
@@ -98,6 +98,24 @@ iterate(txt::Txt) = txt.is_tokenised ? iterate(txt.tokenised) : error("Untokenis
 iterate(txt::Txt, state::Int) = iterate(txt.tokenised, state)
 getindex(txt::Txt, i::Int) = txt.is_tokenised ? txt.tokenised[i] : error("Cannot get index of untokenised Txt")
 setindex!(txt::Txt, X, i::Int) = txt.is_tokenised ? txt.tokenised[i] = X : error("Cannot set index of untokenised Txt")
+
+function show(io::IO, txt::Txt)
+    if txt.is_tokenised
+        show(io, txt.tokenised)
+    else
+        show(io, txt.raw)
+    end
+end
+
+function show(io::IO, ::MIME"text/plain", txt::Txt)
+    if txt.is_tokenised
+        println(io, "$(length(txt))-token", txt.case_sensitive ? " case-sensitive" : "", " Txt:")
+        show(io, txt.tokenised)
+    else
+        println(io, "$(length(txt.raw))-character", txt.case_sensitive ? " case-sensitive" : "", " Txt:")
+        show(io, txt.raw)
+    end
+end
 
 
 function tokenise(txt::Txt, W::CSpace) ::Tuple{Vector{Int}, Dict{Int, String}}
