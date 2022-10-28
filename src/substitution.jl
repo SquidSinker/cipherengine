@@ -43,7 +43,7 @@ function Substitution(chars::Vector{String}, W::CSpace) ::Substitution
         error("Substitutions must contain all tokenised characters only once")
     end
 
-    return Substitution([findfirst(==(i), W.tokenised) for i in string], W)
+    return Substitution([findfirst(==(i), W.chars) for i in chars], W)
 end
 
 
