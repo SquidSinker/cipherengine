@@ -66,7 +66,7 @@ mutable struct Txt
     raw::String
     case_sensitive::Bool
     cases::Union{Nothing, Vector{Bool}}
-    CSpace::Union{Nothing, CSpace}
+    character_space::Union{Nothing, CSpace}
     tokenised::Union{Nothing, Vector{Int}}
     frozen::Union{Nothing, Dict{Int, String}}
     is_tokenised::Bool
@@ -152,10 +152,10 @@ function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_froze
     end
 
     if isnothing(W)
-        W = txt.CSpace
+        W = txt.character_space
     end
 
-    if W.n != txt.CSpace.n
+    if W.n != txt.character_space.n
         restore_case = false
     end
 
@@ -177,7 +177,7 @@ end
 
 function tokenise!(txt::Txt, W::CSpace) ::Txt
     tokenised, frozen = tokenise(txt, W)
-    txt.CSpace = W
+    txt.character_space = W
     txt.frozen = frozen
     txt.is_tokenised = true
     txt.tokenised = tokenised
@@ -187,7 +187,7 @@ end
 
 function untokenise!(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::Txt
     raw = untokenise(txt, W, restore_case = restore_case)
-    txt.CSpace = nothing
+    txt.character_space = nothing
     txt.tokenised = nothing
     txt.frozen = nothing
     txt.cases = isuppercase.(collect(raw))
