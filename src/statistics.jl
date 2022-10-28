@@ -119,4 +119,5 @@ function entropy(vtoken::Vector{Int64}, W::CSpace)
         etp+=n
     end
     etp /= length(W.tokens)
+    return etp
 end
