@@ -96,7 +96,7 @@ end
 
 iterate(txt::Txt) = txt.is_tokenised ? iterate(txt.tokenised) : error("Untokenised Txt objects cannot be iterated")
 iterate(txt::Txt, state::Int) = iterate(txt.tokenised, state)
-getindex(txt::Txt, i::Int) = txt.is_tokenised ? txt.tokenised[i] : error("Cannot get index of untokenised Txt")
+getindex(txt::Txt, args) = txt.is_tokenised ? getindex(txt.tokenised, args) : error("Cannot get index of untokenised Txt")
 setindex!(txt::Txt, X, i::Int) = txt.is_tokenised ? txt.tokenised[i] = X : error("Cannot set index of untokenised Txt")
 
 function show(io::IO, txt::Txt)
