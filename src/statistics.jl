@@ -1,54 +1,56 @@
 include("charspace.jl")
+include("tuco.jl")
 
+# Index of Coincidence
+function ioc(txt::Txt) ::Float64
+    len = length(txt)
 
-function ioc(vtoken::Vector{Int64}, W::CSpace) ::Float64
-    len = length(vtoken)
-    sum = 0
+    tallies = appearances.(txt.character_space.tokens, Ref(txt)) # n
+    sum = sum(tallies .* (tallies .- 1)) # sum of n(n-1)
 
-    for i in 1:length(W.tokenised)
-       n = count(==(i), vtoken)
-       sum += n * (n-1)
-    end
-
-    return sum / (len*(len-1)) / 26
+    return sum / (txt.character_space.size * len * (len-1)) # n(n-1)/N(N-1) normalised
 end
 
 
-
-function periodic_ioc(vtoken::Vector{Int64}, n::Int64, W::CSpace) ::Float64
+# Periodic index of Coincidence
+function periodic_ioc(txt::Txt, n::Int64) ::Float64
     avgIOC = 0
 
     for i in 1:n
-        avgIOC += ioc(vtoken[i:n:end], W)
+        avgIOC += ioc(txt[i:n:end])
     end
 
     return avgIOC / n
 end
 
-
-function what_ioc(expectedv::Float64, vtoken::Vector{Int64}, W::CSpace, upper_lim::Int64) ::Int64
-    #try up to j periodicities, compare with expected value, return value of n which gives closest ioc to expectedvalue of ioc 
-    bestioc = abs(1000000-expectedv) # difference between bestioc and expected v
-    bestp = 1 #int of the most likely periodicity
-    for i in 1:upper_lim
-        # compare periodic_ioc of i with bestioc and see which one is closer to the expected ioc
-        iperiodic_ioc = abs(expectedv-periodic_ioc(vtoken,i,W))
-        if iperiodic_ioc < bestioc
-            bestioc=i #ill try implement something which lists the second third etc likeliest periodicity with difference values later icba rn
-        end
-    end
-    return bestioc
-end
-
-
-
+#################DEPRECATED#
+# function what_ioc(expectedv::Float64, vtoken::Vector{Int64}, W::CSpace, upper_lim::Int64) ::Int64
+#     #try up to j periodicities, compare with expected value, return value of n which gives closest ioc to expectedvalue of ioc 
+#     bestioc = abs(1000000-expectedv) # difference between bestioc and expected v
+#     bestp = 1 #int of the most likely periodicity
+#     for i in 1:upper_lim
+#         # compare periodic_ioc of i with bestioc and see which one is closer to the expected ioc
+#         iperiodic_ioc = abs(expectedv-periodic_ioc(vtoken,i,W))
+#         if iperiodic_ioc < bestioc
+#             bestioc=i #ill try implement something which lists the second third etc likeliest periodicity with difference values later icba rn
+#         end
+#     end
+#     return bestioc
+# end
+###########################
 
 
-# sum(weights) is SLOW FOR LARGE LISTS
+
+
 # front weighted standard deviation: rooted avg of square difference of adjacent values, weighted by a decreasing geometric series
-function fw_stdev(data::Vector, r = 0.5)
+function fw_stdev(data::Vector, r = 0.5) ::Float64
     weights = [r ^ i for i in 1:length(data)]
-    w_total = sum(weights)
+
+    if r == 1 # Calculate sum of weights
+        w_total = length(data)
+    else
+        w_total = r * (1 - r ^ length(data)) / (1 - r)
+    end
 
     mu = sum(weights .* data) / w_total
 
@@ -58,9 +60,9 @@ function fw_stdev(data::Vector, r = 0.5)
 end
 
 # finds period by minimising fw_stdev for every n + ith item
-function find_period(data::Vector, upper_lim::Int; mode = "best") ::Int
+function find_period(data::Vector, upper_lim::Int) ::Int
 
-    errors = []
+    errors = Vector{Int}(undef, upper_lim)
 
     for n in 1:upper_lim
         avg_error = 0
@@ -69,55 +71,100 @@ function find_period(data::Vector, upper_lim::Int; mode = "best") ::Int
             avg_error += fw_stdev(data[i:n:end], 1)
         end
 
-        append!(errors, avg_error / n)
+        errors[n] = avg_error / n
     end
 
 
     return argmin(errors)
 end
 
-function lengthstats(vtoken::Vector{Int64}, checklim::Int64, printing=false)
-    factors = []
-    for i in 1:checklim
-        if mod(length(vtoken), i) == 0
-            push!(factors,i)
+
+
+
+# Finding divisors
+function divisors(number::Int) ::Vector{Int}
+    # Step 1: find all divisors
+    divisors = []
+    for int in 2:number-1
+        if number % int == 0
+            push!(divisors, int)
         end
     end
-    if printing
-        println(factors)
+
+    return divisors
+end
+
+
+
+
+# Prime Factorisation Algorithm
+function factorise(number::Int) ::Vector{Int}
+
+    # Step 2 repeatedly divide from bottom up (2, 3, 5, 7...)
+    factors = []
+    for int in divisors(number)
+        while number % int == 0
+            push!(factors, int)
+            number /= int
+        end
+
+        if number == 1
+            break
+        end
     end
+
     return factors
 end
 
-#rolling avg implementation:
-#=
-window = int size of averaging window
-for every token, take the mean of the neigbouring windowsize tokens
-start from 1+kth token end at length-kth token 
+###################DEPRECATED#
+# function rollavg(vtoken::Vector{Int64},#=W::Vector{Int64},=# W::CSpace, window::Int64)
+#     println("AMONGUS")
+#     tokens = W.tokens
+#     #tokens = W
+#     avglist = []
+#     for t in tokens
+#         tavglist = []
+#         for i in 1:(length(vtoken)-(window))
+#             push!(tavglist, count(x->x==t,vtoken[i:i+(window-1)]))
+#         end
+#         push!(avglist,tavglist)
+#     end
+#     return avglist
+# end
+##############################
 
-=#
-function rollavg(vtoken::Vector{Int64},#=W::Vector{Int64},=# W::CSpace, window::Int64)
-    println("AMONGUS")
-    tokens = W.tokens
-    #tokens = W
-    avglist = []
-    for t in tokens
-        tavglist = []
-        for i in 1:(length(vtoken)-(window))
-            push!(tavglist, count(x->x==t,vtoken[i:i+(window-1)]))
-        end
-        push!(avglist,tavglist)
+
+
+
+# Rolling average of data, sampled by window
+function rolling_average(data::Vector, window::Int) ::Vector{Float64}
+    shortend = length(data) - window
+    out = Vector{Float64}(undef, shortend)
+
+    for start in 1:shortend
+        out[start] = sum(data[start:start+window]) / window
     end
-    return avglist
+
+    return out
 end
 
-function entropy(vtoken::Vector{Int64}, W::CSpace)
-    etp = 0
-    for t in W.tokens
-        n = count(x->x==t,vtoken)/length(vtoken)
-        n = -n*log(2.71,n)
-        etp+=n
+
+function char_distribution(txt::Txt, window::Int, token::Int) ::Vector{Float64}
+    shortend = length(txt) - window
+    out = Vector{Float64}(undef, shortend) # appearances of token in window
+
+    for start in 1:shortend
+        out[start] = appearances(token, txt[start:start+window]) / window
     end
-    etp /= length(W.tokens)
-    return etp
+
+    return rolling_average(out, window)
+end
+
+
+# Entropy
+function entropy(txt::Txt)
+    f = vector_frequencies(txt)
+    entropy = sum( - f .* log2.(f))
+
+    return entropy / txt.character_space.size
 end
