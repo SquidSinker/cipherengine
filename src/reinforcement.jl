@@ -1,4 +1,3 @@
-include("charspace.jl")
 include("substitution.jl")
 include("tuco.jl")
 
@@ -81,8 +80,8 @@ end
 
 
 # initialises PosProbMat guessing the INVERSE substitution
-function new_PosProbMat(W::CSpace) ::Matrix
-    n = W.size
+function new_PosProbMat(txt::Txt) ::Matrix
+    n = txt.character_space.size
 
     # uniform weighting, row-summing to 1
     PosProbMat = ones((n, n)) / n
@@ -91,8 +90,8 @@ function new_PosProbMat(W::CSpace) ::Matrix
 end
 
 # initialises PosProbMat guessing the INVERSE substitution
-function new_PosProbMat(txt::Vector{Int}, ref_freq::Vector{Float64}) ::Matrix
-    L = length(vect)
+function new_PosProbMat(txt::Txt, ref_freq::Vector{Float64}) ::Matrix
+    L = length(txt)
 
     # total appearances of each token, stored as Vector
     tallies = appearances.(txt.character_space.tokens, Ref(txt))
@@ -196,7 +195,7 @@ function debug_linear_reinforcement(
 
 
     anim = @animate for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, n), spawns)
+        swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, txt.character_space.size), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
         delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- F
         # generates new swaps from ppM and calculates dF

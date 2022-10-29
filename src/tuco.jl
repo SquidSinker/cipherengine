@@ -4,8 +4,7 @@ TUCO is a drug lord.
 TUCO handles all statistical stuff, including fitness statistics
 
 =#
-
-
+include("charspace.jl")
 
 
 # FREQUENCY
@@ -60,18 +59,6 @@ end
 
 
 
-# Finds forwards substitution
-function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float64})
-    f = sort_by_values(frequencies(txt)) # vector of token indices (Ints) sorted in ascending frequencies
-
-    ref_frequencies = sort_by_values(to_dict(ref_frequencies))
-
-    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], W) # starts with letters arranged by frequencies against ref_frequencies
-end
-
-
-
-
 
 
 
@@ -86,20 +73,20 @@ end
 
 
 using JLD2
-@load "quadgram_score_dict.jld2" quadgram_scores
+@load "jld2/quadgram_score_dict.jld2" quadgram_scores
 
 const nullfitness = log10(0.1/4224127912)
 
 function quadgramlog(txt::Txt) ::Float64
-    if txt.CSpace != Alphabet_CSpace
+    if txt.character_space != Alphabet_CSpace
         error("Quadgramlog fitness only works on Alphabet_CSpace")
     end
 
     L = length(txt) - 3
 
     score = 0.0
-    for _ in 1:L
-        score += get(quadgrams, txt[i:(i+3)], nullfitness)
+    for i in 1:L
+        score += get(quadgram_scores, txt[i:(i+3)], nullfitness)
     end
 
     return score / L
@@ -139,11 +126,11 @@ end
 #     end
 # end
 
-# @save "quadgram_score_dict.jld2" quadgram_scores = eng_quadgrams
+# @save "jld2/quadgram_score_dict.jld2" quadgram_scores = eng_quadgrams
 
 
 
 
 # using JLD2
-# @load "english_monogram_frequencies.jld2" eng
+# @load "jld2/english_monogram_frequencies.jld2" eng
 # # Vector with v[i] = j is the token index and j is the frequency

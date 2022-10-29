@@ -47,6 +47,17 @@ function Substitution(chars::Vector{String}, W::CSpace) ::Substitution
 end
 
 
+# Finds forwards substitution matching tokens sorted by frequency
+function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float64})
+    f = sort_by_values(frequencies(txt)) # vector of token indices (Ints) sorted in ascending frequencies
+
+    ref_frequencies = sort_by_values(to_dict(ref_frequencies))
+
+    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], txt.character_space) # starts with letters arranged by frequencies against ref_frequencies
+end
+
+
+
 
 length(S::Substitution) ::Int = S.size
 
