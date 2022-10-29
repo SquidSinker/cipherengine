@@ -49,6 +49,14 @@ end
 ngramify(W::CSpace, n::Int) ::CSpace = n == 1 ? W : combine(W, ngramify(W, n - 1))
 digramify(W::CSpace) ::CSpace = ngramify(W, 2)
 
+function tokenise(char::String, W::CSpace) ::Union{Nothing, Int}
+    return findfirst(==(char), W.chars)
+end
+
+function untokenise(int::Int, W::CSpace) ::String
+    return W.chars[int]
+end
+
 +(W1::CSpace, W2::CSpace) ::CSpace = union(W1, W2)
 *(W1::CSpace, W2::CSpace) ::CSpace = combine(W1, W2)
 ^(W::CSpace, n::Int) ::CSpace = ngramify(W, n)

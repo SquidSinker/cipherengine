@@ -172,9 +172,104 @@ end
 
 
 # Presets
-function Atbash(args) ::Substitution
-    s = Substitution(args)
+function Atbash(size::Int) ::Substitution
+    s = Substitution(size)
     reverse!(s.mapping)
 
     return s
 end
+Atbash(W::CSpace) ::Substitution = Atbash(W.size)
+
+function Caesar(shift::Int, size::Int) ::Substitution
+    s = Substitution(size)
+    shift!(s, mod(-shift, size))
+
+    return s
+end
+Caesar(shift::Int, W::CSpace) ::Substitution = Caesar(shift::Int, W.size)
+
+function Affine(a::Int, b::Int, size::Int) ::Substitution
+    if gcd(a, size) != 1
+        println("WARNING: Affine parameter $(a)x + $(b) (mod $(size)) is a singular transformation and cannot be inverted")
+    end
+
+    s = Substitution(size)
+    s.mapping *= a
+    s.mapping .+= (b - a + 1) # Shifted to account for one-base indexing, standardising
+    s.mapping = mod.(s.mapping, size)
+
+    return s
+end
+Affine(a::Int, b::Int, W::CSpace) ::Substitution = Affine(a, b, W.size)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+############ MULTI Substitutions FRAMEWORK ################################################
+
+# Applies MultiSubstitution to Integer Vectors
+function apply!(S::Vector{Substitution}, vect::Vector{Int}) ::Vector{Int}
+    period = length(S)
+
+    for (i, j) in enumerate(S)
+        vect[i:period:end] .= apply(j, vect[i:period:end])
+    end
+
+    return vect
+end
+apply(S::Vector{Substitution}, vect::Vector{Int}) ::Vector{Int} = apply!(S, deepcopy(vect))
+
+
+# Applies MultiSubstitution to Txt
+function apply!(S::Vector{Substitution}, txt::Txt) ::Txt
+    if !txt.is_tokenised
+        error("Cannot apply Substitution to untokenised Txt")
+    end
+
+    if txt.character_space.size != S.size
+        error("Substitution size must match size of Character Space")
+    end
+
+    apply!(S, txt.tokenised)
+    return txt
+end
+apply(S::Vector{Substitution}, txt::Txt) ::Txt = apply!(S, deepcopy(txt))
+
+
+
+(S::Vector{Substitution})(txt::Txt) ::Txt = apply(S, txt)
+
+
+
+
+
+
+# Presets
+function Vigenere(vect::Vector{Int}, size::Union{Int, CSpace}) ::Vector{Substitution}
+    return [Caesar(i, size) for i in vect]
+end
+Vigenere(vect::Vector{String}, W::CSpace) ::Vector{Substitution} = Vigenere(tokenise.(vect, Ref(W)) .- 1, W) # Subtracting one to standardise for 0-based indexing
+Vigenere(vect::Vector{Char}, W::CSpace) ::Vector{Substitution} = Vigenere(string.(vect), W)
+Vigenere(string::String, W::CSpace) ::Vector{Substitution} = W.n == 1 ? Vigenere(collect(string), W) : error("Character Space must be 1-gram for String argument to be tokenised")
+
+function Periodic_Affine(vect::Vector{Tuple{Int, Int}}, size::Union{Int, CSpace}) ::Vector{Substitution}
+    return [Affine(a, b, size) for (a, b) in vect]
+end
+Periodic_Affine(vecta::Vector{Int}, vectb::Vector{Int}, size::Union{Int, CSpace}) ::Vector{Substitution} = length(vecta) == length(vectb) ? Periodic_Affine(collect(zip(vecta, vectb)), size) : error("Parameter vectors must have same length")
