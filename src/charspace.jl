@@ -104,16 +104,22 @@ end
 
 iterate(txt::Txt) = txt.is_tokenised ? iterate(txt.tokenised) : error("Untokenised Txt objects cannot be iterated")
 iterate(txt::Txt, state::Int) = iterate(txt.tokenised, state)
-function getindex(txt::Txt, args) ::Txt
+
+function getindex(txt::Txt, args) ::Union{Int, Txt}
     if !txt.is_tokenised
         error("Cannot get index of untokenised Txt")
     end
+
+    if args isa Int
+        return txt.tokenised[args]
+    end 
     
     t = deepcopy(txt)
     t.tokenised = getindex(t.tokenised, args)
 
     return t
 end
+
 setindex!(txt::Txt, X, i::Int) = txt.is_tokenised ? txt.tokenised[i] = X : error("Cannot set index of untokenised Txt")
 lastindex(txt::Txt) = lastindex(txt.tokenised)
 
