@@ -195,8 +195,9 @@ function Affine(a::Int, b::Int, size::Int) ::Substitution
 
     s = Substitution(size)
     s.mapping *= a
-    s.mapping .+= (b - a + 1) # Shifted to account for one-base indexing, standardising
+    s.mapping .+= (b - a) # Shifted to account for one-base indexing, standardising
     s.mapping = mod.(s.mapping, size)
+    s.mapping .+= 1
 
     return s
 end
@@ -243,7 +244,13 @@ function apply!(S::Vector{Substitution}, txt::Txt) ::Txt
         error("Cannot apply Substitution to untokenised Txt")
     end
 
-    if txt.character_space.size != S.size
+    size = S[1].size
+
+    if any(length.(S) .!= size)
+        error("All Substitutions in a Vector must have the same length")
+    end
+
+    if txt.character_space.size != size
         error("Substitution size must match size of Character Space")
     end
 

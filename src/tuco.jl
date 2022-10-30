@@ -86,7 +86,7 @@ function quadgramlog(txt::Txt) ::Float64
 
     score = 0.0
     for i in 1:L
-        score += get(quadgram_scores, txt[i:(i+3)], nullfitness)
+        score += get(quadgram_scores, txt.tokenised[i:(i+3)], nullfitness)
     end
 
     return score / L
