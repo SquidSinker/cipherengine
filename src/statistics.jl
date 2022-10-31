@@ -42,17 +42,32 @@ end
 
 
 
+
+
+# regular standard deviation
+function stdev(data::Vector) ::Float64
+    l = length(data)
+    mu = sum(data) / l
+
+    var = sum(data .^2) / l - mu ^ 2
+
+    return sqrt(var)
+end
+
 # front weighted standard deviation: rooted avg of square difference of adjacent values, weighted by a decreasing geometric series
 function fw_stdev(data::Vector, r = 0.5) ::Float64
-    weights = [r ^ i for i in 1:length(data)]
-
-    if r == 1 # Calculate sum of weights
-        w_total = length(data)
-    else
-        w_total = r * (1 - r ^ length(data)) / (1 - r)
+    if r == 1
+        return stdev(data)
     end
 
+    weights = [r ^ i for i in 1:length(data)]
+    # weight data in geometric series
+
+    w_total = r * (1 - r ^ length(data)) / (1 - r)
+    # Calculate sum of weights
+
     mu = sum(weights .* data) / w_total
+    # find mean
 
     var = sum( (data .- mu).^2 .* weights ) / w_total
 
@@ -85,21 +100,23 @@ end
 ######################
 
 
-function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64 = 1e-4) ::Union{Nothing, Int}
+function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64 = 0.15; weight_ratio ::Float64 = 0.5) ::Union{Nothing, Int}
     upper_lim = min(upper_lim, length(data) - 1)
+    # test until period > upper_lim
 
-    threshold = (maximum(data) - minimum(data)) * tolerance
+    threshold = fw_stdev(data, weight_ratio) * tolerance
 
-    for n in 1:upper_lim # Calculate average std_dev
+    for n in 1:upper_lim
         avg_error = 0
 
         for i in 1:n
-            avg_error += fw_stdev(data[i:n:end], 0.5)
+            avg_error += fw_stdev(data[i:n:end], weight_ratio)
+            # Compare n-length chunks of data to themselves, find std_dev
         end
 
         avg_error /= n
 
-        if avg_error < tolerance
+        if avg_error < threshold # if the periodic std_dev is below the threshold
             return n
             break
         end
@@ -107,6 +124,10 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64 =
 
     return nothing
 end
+
+
+
+
 
 
 

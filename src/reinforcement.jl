@@ -18,14 +18,15 @@ end
 
 
 # Fitness function for PosProbMat, calculates Kullback-Leibler Divergence between PosProbMat and the target (certain) PosProbMat
+# target is the FORWARDS substitution
 function PosProbMat_divergence(target::Substitution, PosProbMat::Matrix) ::Float64
     s = 0
 
     for (i, j) in enumerate(target.mapping)
-        s += log10(PosProbMat[i, j])
+        s += log2(PosProbMat[i, j])
     end
 
-    return s / length(target)
+    return - s / length(target)
 end
 
 
@@ -80,7 +81,7 @@ end
 
 
 # initialises PosProbMat guessing the INVERSE substitution
-function new_PosProbMat(txt::Txt) ::Matrix
+function new_PosProbMat(n::Int) ::Matrix
     n = txt.character_space.size
 
     # uniform weighting, row-summing to 1
@@ -88,6 +89,9 @@ function new_PosProbMat(txt::Txt) ::Matrix
 
     return PosProbMat
 end
+new_PosProbMat(txt::Txt) ::Matrix = new_PosProbMat(txt.character_space.size)
+new_PosProbMat(S::Substitution) ::Matrix = new_PosProbMat(S.size)
+
 
 # initialises PosProbMat guessing the INVERSE substitution
 function new_PosProbMat(txt::Txt, ref_freq::Vector{Float64}) ::Matrix
@@ -111,9 +115,9 @@ end
 
 
 ####### DEPRECATED
-function predict_substitution(PosProbMat::Matrix) # THIS DOES NOT WORK IF Pij maxes on the same j for different i (repeats in Substitution)
-    return Substitution( argmax.(eachcol(PosProbMat)) )
-end
+# function predict_substitution(PosProbMat::Matrix) # THIS DOES NOT WORK IF Pij maxes on the same j for different i (repeats in Substitution)
+#     return Substitution( argmax.(eachcol(PosProbMat)) )
+# end
 ##################
 
 
@@ -334,4 +338,35 @@ end
 
 
 
+# Probe at fitness(S) the convergence density, averaging over all swaps with reinforce_rate == 1 (definition)
+# S is a guess of the INVERSE substitution
+function probe_info_density(S::Substitution, target::Substitution, sample_txt::Txt, fitness::Function, target_fitness::Float64)
+    start = new_PosProbMat(S)
+    N = S.size
+    S_fitness = fitness(apply(S, sample_txt))
+    start_div = PosProbMat_divergence(target, start)
 
+    avg_delta_divergence = 0
+
+    for m in 1:N
+        for n in 1:N
+            P = copy(start)
+
+            a = S[m]
+            b = S[n]
+
+            delta_f = fitness(apply(switch(S, m, n), sample_txt))
+            delta_f -= S_fitness
+
+            update_PosProbMat!(P, a, b, m, n, delta_f, 1)
+
+            avg_delta_divergence += PosProbMat_divergence(target, P)
+        end
+    end
+
+    avg_delta_divergence /= N ^ 2
+    avg_delta_divergence -= start_div
+
+    return S_fitness - target_fitness, - avg_delta_divergence
+    # relative fitness level of probe // information density
+end
