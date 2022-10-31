@@ -6,6 +6,10 @@ TUCO handles all statistical stuff, including fitness statistics
 =#
 include("charspace.jl")
 
+using JLD2
+@load "jld2/quadgram_score_dict.jld2" quadgram_scores
+@load "jld2/monogram_frequency_vector.jld2" monogram_freq
+
 
 # FREQUENCY
 
@@ -62,7 +66,7 @@ end
 
 
 
-function orthodot(txt::Txt, ref_frequencies::Vector{Float64}) ::Float64
+function orthodot(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq) ::Float64
     frequencies = vector_frequencies(txt)
 
     magnitude = sum(frequencies .^ 2) * sum(ref_frequencies .^ 2)
@@ -71,9 +75,6 @@ function orthodot(txt::Txt, ref_frequencies::Vector{Float64}) ::Float64
 end
 
 
-
-using JLD2
-@load "jld2/quadgram_score_dict.jld2" quadgram_scores
 
 const nullfitness = log10(0.1/4224127912)
 

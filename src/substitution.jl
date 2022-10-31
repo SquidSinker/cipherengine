@@ -48,7 +48,7 @@ end
 
 
 # Finds forwards substitution matching tokens sorted by frequency
-function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float64})
+function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq)
     f = sort_by_values(frequencies(txt)) # vector of token indices (Ints) sorted in ascending frequencies
 
     ref_frequencies = sort_by_values(to_dict(ref_frequencies))
