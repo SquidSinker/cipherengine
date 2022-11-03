@@ -35,12 +35,45 @@ end
 
 
 
+function uniform_choice_weights(gen, fitness, n)
+    return ones(n) / n
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Limiting function taking (-inf, inf) -> (-p_new, p_old), with update_delta(0) == 0
 function update_delta(delta_fitness, p_old, p_new, rate) ::Float64
+
     if (p_old <= 1e-320) || (p_new <= 1e-320)
         return 0.0
     end
+
+
+    if rate == Inf # maximum learn rate
+        if delta_fitness == 0
+            return 0.0
+        elseif delta_fitness > 0
+            return p_old
+        else
+            return - p_new
+        end
+    end
+
 
     mu = p_old + p_new # division by 2 carried out at the end
     diff = p_old - p_new # division by 2 carried out at the end
@@ -52,7 +85,7 @@ end
 
 
 # Updates relevant PosProbMat entries based on delta_fitness, posA and posB are positions of A and B BEFORE SWAPPING
-function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::Int, posB::Int, delta_fitness::Float64, reinforce_rate) ::Nothing
+function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::Int, posB::Int, delta_fitness::Float64, reinforce_rate) ::Matrix
     dA = update_delta(delta_fitness, PosProbMat[tokenA, posA], PosProbMat[tokenA, posB], reinforce_rate)
     dB = update_delta(delta_fitness, PosProbMat[tokenB, posB], PosProbMat[tokenB, posA], reinforce_rate)
 
@@ -62,18 +95,20 @@ function update_PosProbMat!(PosProbMat::Matrix, tokenA::Int, tokenB::Int, posA::
     PosProbMat[tokenB, posB] -= dB
     PosProbMat[tokenB, posA] += dB
 
-    return nothing
+    return PosProbMat
 end
 
+
+
 # restricts ppM values to [0,1]
-function tidy_PosProbMat!(PosProbMat::Matrix) ::Nothing
+function tidy_PosProbMat!(PosProbMat::Matrix) ::Matrix
     zeros = PosProbMat .< 0.0
     ones = PosProbMat .> 1.0
 
     PosProbMat[zeros] .= 0.0
     PosProbMat[ones] .= 1.0
     
-    return nothing
+    return PosProbMat
 end
 
 
@@ -124,7 +159,7 @@ end
 
 
 
-using StatsBase # for sample()
+import StatsBase.sample, StatsBase.pweights # for sample()
 
 # Generates a batch of swaps (tokenA, tokenB, posA, posB) representing tokenA goes from posA to posB and vice versa
 # takes current substitution (to prevent identity swaps)
@@ -142,21 +177,16 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
 
     indices = Tuple.(keys(Draw_Matrix)) # THIS IS CALLED EVERY TIME AND IS THE SAME EVERY TIME (static var)
 
-    for i in 1:number
-        (a, n) = sample(indices, Weights(vec( Draw_Matrix ))) # (which token to swap, where to move it to)
+    println(pweights(Draw_Matrix))
+    samples = sample(indices, pweights( Draw_Matrix ), number, replace = false) # Tuple(which token to swap, where to move it to)
+    a = [i[1] for i in samples]
+    n = [i[2] for i in samples]
 
-        b = S[n] # find token in target posN
-        m = findfirst(==(a), S.mapping) # find original position of token a
-
-        out[i] = (a, b, m, n)
-
-        # Stop them being chosen again
-        Draw_Matrix[a, n] = 0
-        Draw_Matrix[b, m] = 0
-    end
+    b = [S[i] for i in n] # find token in target posN
+    m = [findfirst(==(i), S.mapping) for i in a] # find original position of token a
 
 
-    return out
+    return collect(zip(a,b,m,n))
 end
 
 
@@ -193,15 +223,15 @@ function debug_linear_reinforcement(
     end
 
 
-    F = fitness(apply(parent_sub, txt))
-    fitness_log = [F]
+    parent_fitness = fitness(apply(parent_sub, txt))
+    fitness_log = [parent_fitness]
     div_log = [PosProbMat_divergence(target, P)]
 
 
     anim = @animate for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, txt.character_space.size), spawns)
+        swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- F
+        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
         # generates new swaps from ppM and calculates dF
 
 
@@ -216,22 +246,23 @@ function debug_linear_reinforcement(
         # Set new parent and fitness
         if lineage_habit == "ascent"
             parent_sub = new_substitutions[argmax(delta_F)]
-            F += maximum(delta_F)
+            parent_fitness += maximum(delta_F)
 
         elseif lineage_habit == "floored ascent"
             if maximum(delta_F) > 0
                 parent_sub = new_substitutions[argmax(delta_F)]
-                F += maximum(delta_F)
+                parent_fitness += maximum(delta_F)
             end
 
         elseif lineage_habit == "random"
             parent_sub = new_substitutions[1]
-            F += delta_F[1]
+            parent_fitness += delta_F[1]
 
         elseif lineage_habit == "descent"
             parent_sub = new_substitutions[argmin(delta_F)]
-            F += minimum(delta_F)
+            parent_fitness += minimum(delta_F)
 
+        elseif lineage_habit == "stationary"
         else
             error("Invalid lineage habit kwarg")
         end
@@ -239,7 +270,7 @@ function debug_linear_reinforcement(
 
 
 
-        push!(fitness_log, F)
+        push!(fitness_log, parent_fitness)
         push!(div_log, PosProbMat_divergence(target, P))
 
         heatmap(P, clims = (0,1), aspect_ratio = :equal)
@@ -285,12 +316,12 @@ function linear_reinforcement(
     end
 
 
-    F = fitness(apply(parent_sub, txt))
+    parent_fitness = fitness(apply(parent_sub, txt))
 
     for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, choice_weights(gen, F, n), spawns)
+        swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- F
+        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
         # generates new swaps from ppM and calculates dF
 
 
@@ -305,22 +336,23 @@ function linear_reinforcement(
         # Set new parent and fitness
         if lineage_habit == "ascent"
             parent_sub = new_substitutions[argmax(delta_F)]
-            F += maximum(delta_F)
+            parent_fitness += maximum(delta_F)
 
         elseif lineage_habit == "floored ascent"
             if maximum(delta_F) > 0
                 parent_sub = new_substitutions[argmax(delta_F)]
-                F += maximum(delta_F)
+                parent_fitness += maximum(delta_F)
             end
 
         elseif lineage_habit == "random"
             parent_sub = new_substitutions[1]
-            F += delta_F[1]
+            parent_fitness += delta_F[1]
 
         elseif lineage_habit == "descent"
             parent_sub = new_substitutions[argmin(delta_F)]
-            F += minimum(delta_F)
+            parent_fitness += minimum(delta_F)
 
+        elseif lineage_habit == "stationary"
         else
             error("Invalid lineage habit kwarg")
         end
@@ -334,6 +366,115 @@ function linear_reinforcement(
     return P, parent_sub
     # Reinforced Matrix // final Substitution in lineage
 end
+
+
+
+
+
+
+
+
+
+
+
+
+# Tailored to benchmark tests
+function benchmark_linear_reinforcement(
+    inv_target::Substitution,
+    txt::Txt,
+    generations::Int,
+    spawns::Int,
+    choice_weights::Function,
+    fitness::Function,
+    ref_freq::Union{Vector{Float64}, Nothing} = nothing,
+    reinforce_rate::Float64 = 0.5;
+    lineage_habit::String = "ascent"
+)
+
+
+    if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
+        P = new_PosProbMat(W)
+
+        parent_sub = Substitution(W)
+
+    else # if given, use best guesses for ppM and substitution
+        P = new_PosProbMat(txt, ref_freq)
+
+        parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
+        invert!(parent_sub)
+    end
+
+
+    parent_fitness = fitness(apply(parent_sub, txt))
+
+    fitness_arr = Vector{Float64}(undef, generations + 1)
+    fitness_arr[1] = parent_fitness
+    # fitness tracking
+
+    check_if_solved = true
+    solved_in = generations
+
+    for gen in 1:generations
+        swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
+        new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
+        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
+        # generates new swaps from ppM and calculates dF
+
+
+        for ((a, b, m, n), dF) in zip(swaps, delta_F) # Update P with ALL the data
+            update_PosProbMat!(P, a, b, m, n, dF, reinforce_rate)
+        end
+
+        tidy_PosProbMat!(P) # corrects floating point error
+
+
+
+        # Set new parent and fitness
+        if lineage_habit == "ascent"
+            parent_sub = new_substitutions[argmax(delta_F)]
+            parent_fitness += maximum(delta_F)
+
+        elseif lineage_habit == "floored ascent"
+            if maximum(delta_F) > 0
+                parent_sub = new_substitutions[argmax(delta_F)]
+                parent_fitness += maximum(delta_F)
+            end
+
+        elseif lineage_habit == "random"
+            parent_sub = new_substitutions[1]
+            parent_fitness += delta_F[1]
+
+        elseif lineage_habit == "descent"
+            parent_sub = new_substitutions[argmin(delta_F)]
+            parent_fitness += minimum(delta_F)
+
+        elseif lineage_habit == "stationary"
+        else
+            error("Invalid lineage habit kwarg")
+        end
+
+        fitness_arr[gen + 1] = parent_fitness
+
+
+        if check_if_solved
+            if parent_sub == inv_target
+                solved_in = gen + 1
+                check_if_solved = false
+            end
+        end
+
+    end
+
+    return fitness_arr, solved_in
+    # fitness data // number of generations to solve
+end
+
+
+
+
+
+
+
 
 
 

@@ -8,7 +8,7 @@ include("genetics.jl")
 
 # Returns element of input Vector that maximises x -> fitness(f(x))
 function optimise(f::Function, inputs::AbstractVector, fitness::Function)
-    scores = fitness.(f.(inputs))
+    scores = [fitness(f(i)) for i in inputs]
 
     return inputs[argmax(scores)]
 end

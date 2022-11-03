@@ -1,4 +1,5 @@
 import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex
+import Random.shuffle!
 include("charspace.jl")
 
 #=
@@ -56,7 +57,12 @@ function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float6
     return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], txt.character_space) # starts with letters arranged by frequencies against ref_frequencies
 end
 
-
+function rand_substitution(size::Int) ::Substitution
+    s = Substitution(size)
+    shuffle!(s.mapping)
+    return s
+end
+rand_substitution(W::CSpace) ::Substitution = rand_substitution(W.size)
 
 
 length(S::Substitution) ::Int = S.size
