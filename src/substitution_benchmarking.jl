@@ -1,8 +1,9 @@
 include("reinforcement.jl")
+include("statistics.jl")
 
 
-test_gen = 150
-test_number = 75
+test_gen = 25
+test_number = 150
 
 
 
@@ -42,7 +43,7 @@ for i in 1:test_number
     uniform_choice_weights,
     quadgramlog,
     monogram_freq,
-    Inf;
+    10.;
     lineage_habit = "floored ascent"
     )
 
@@ -57,15 +58,16 @@ end
 fitnesses = hcat(fitnesses...)
 
 avg_fitness = sum(fitnesses, dims = 2) / test_number
+stdev_solve = stdev(solve_lengths)
 avg_solve = sum(solve_lengths) / test_number
 
 
 
-name = "reinforcement_10_u_05_fa"
+name = "reinforcement_10_u_10_fa"
 
 using DelimitedFiles
 writedlm("sub_bench_" * name * ".csv", avg_fitness, ",")
-println("Solved in average: $(avg_solve) generations")
+println("Solved in average: $(avg_solve) generations (σ = $(stdev_solve))")
 
 
 

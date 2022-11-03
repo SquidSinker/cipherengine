@@ -117,7 +117,6 @@ end
 
 # initialises PosProbMat guessing the INVERSE substitution
 function new_PosProbMat(n::Int) ::Matrix
-    n = txt.character_space.size
 
     # uniform weighting, row-summing to 1
     PosProbMat = ones((n, n)) / n
@@ -177,7 +176,7 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
 
     indices = Tuple.(keys(Draw_Matrix)) # THIS IS CALLED EVERY TIME AND IS THE SAME EVERY TIME (static var)
 
-    println(pweights(Draw_Matrix))
+
     samples = sample(indices, pweights( Draw_Matrix ), number, replace = false) # Tuple(which token to swap, where to move it to)
     a = [i[1] for i in samples]
     n = [i[2] for i in samples]
@@ -187,6 +186,41 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
 
 
     return collect(zip(a,b,m,n))
+end
+
+
+# Work out next parent in lineage, based on lineag_habit type
+function next_in_lineage(parent::T, children::Vector{T}, parent_fitness::Float64, child_delta_fitness::Vector{Float64}; lineage_habit::String) ::Tuple{T, Float64} where {T}
+    if length(children) != length(child_delta_fitness)
+        error("Each child must have an associated delta fitness")
+    end
+
+
+    # Set new parent and fitness
+    if lineage_habit == "ascent"
+        parent = children[argmax(child_delta_fitness)]
+        parent_fitness += maximum(child_delta_fitness)
+
+    elseif lineage_habit == "floored ascent"
+        if maximum(child_delta_fitness) > 0
+            parent = children[argmax(child_delta_fitness)]
+            parent_fitness += maximum(child_delta_fitness)
+        end
+
+    elseif lineage_habit == "random"
+        parent = children[1]
+        parent_fitness += child_delta_fitness[1]
+
+    elseif lineage_habit == "descent"
+        parent = children[argmin(child_delta_fitness)]
+        parent_fitness += minimum(child_delta_fitness)
+
+    elseif lineage_habit == "stationary"
+    else
+        error("Invalid lineage habit kwarg")
+    end
+
+    return parent, parent_fitness
 end
 
 
@@ -243,31 +277,8 @@ function debug_linear_reinforcement(
 
 
 
-        # Set new parent and fitness
-        if lineage_habit == "ascent"
-            parent_sub = new_substitutions[argmax(delta_F)]
-            parent_fitness += maximum(delta_F)
-
-        elseif lineage_habit == "floored ascent"
-            if maximum(delta_F) > 0
-                parent_sub = new_substitutions[argmax(delta_F)]
-                parent_fitness += maximum(delta_F)
-            end
-
-        elseif lineage_habit == "random"
-            parent_sub = new_substitutions[1]
-            parent_fitness += delta_F[1]
-
-        elseif lineage_habit == "descent"
-            parent_sub = new_substitutions[argmin(delta_F)]
-            parent_fitness += minimum(delta_F)
-
-        elseif lineage_habit == "stationary"
-        else
-            error("Invalid lineage habit kwarg")
-        end
-
-
+        parent_sub, parent_fitness = next_in_lineage(parent_sub, new_substitutions, parent_fitness, delta_F; lineage_habit)
+        # advance lineage
 
 
         push!(fitness_log, parent_fitness)
@@ -332,30 +343,8 @@ function linear_reinforcement(
         tidy_PosProbMat!(P) # corrects floating point error
 
 
-
-        # Set new parent and fitness
-        if lineage_habit == "ascent"
-            parent_sub = new_substitutions[argmax(delta_F)]
-            parent_fitness += maximum(delta_F)
-
-        elseif lineage_habit == "floored ascent"
-            if maximum(delta_F) > 0
-                parent_sub = new_substitutions[argmax(delta_F)]
-                parent_fitness += maximum(delta_F)
-            end
-
-        elseif lineage_habit == "random"
-            parent_sub = new_substitutions[1]
-            parent_fitness += delta_F[1]
-
-        elseif lineage_habit == "descent"
-            parent_sub = new_substitutions[argmin(delta_F)]
-            parent_fitness += minimum(delta_F)
-
-        elseif lineage_habit == "stationary"
-        else
-            error("Invalid lineage habit kwarg")
-        end
+        parent_sub, parent_fitness = next_in_lineage(parent_sub, new_substitutions, parent_fitness, delta_F; lineage_habit)
+        # advance lineage
 
     end
 
@@ -429,29 +418,8 @@ function benchmark_linear_reinforcement(
 
 
 
-        # Set new parent and fitness
-        if lineage_habit == "ascent"
-            parent_sub = new_substitutions[argmax(delta_F)]
-            parent_fitness += maximum(delta_F)
-
-        elseif lineage_habit == "floored ascent"
-            if maximum(delta_F) > 0
-                parent_sub = new_substitutions[argmax(delta_F)]
-                parent_fitness += maximum(delta_F)
-            end
-
-        elseif lineage_habit == "random"
-            parent_sub = new_substitutions[1]
-            parent_fitness += delta_F[1]
-
-        elseif lineage_habit == "descent"
-            parent_sub = new_substitutions[argmin(delta_F)]
-            parent_fitness += minimum(delta_F)
-
-        elseif lineage_habit == "stationary"
-        else
-            error("Invalid lineage habit kwarg")
-        end
+        parent_sub, parent_fitness = next_in_lineage(parent_sub, new_substitutions, parent_fitness, delta_F; lineage_habit)
+        # advance lineage
 
         fitness_arr[gen + 1] = parent_fitness
 

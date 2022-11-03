@@ -3,6 +3,10 @@ include("tuco.jl")
 
 # Index of Coincidence
 function ioc(txt::Txt) ::Float64
+    if !txt.is_tokenised
+        error("Txt must be tokenised to perform statistical tests")
+    end
+
     len = length(txt)
 
     tallies = appearances.(txt.character_space.tokens, Ref(txt)) # n
@@ -100,7 +104,7 @@ end
 ######################
 
 
-function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64 = 0.15; weight_ratio ::Float64 = 0.5) ::Union{Nothing, Int}
+function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; weight_ratio ::Float64 = 0.5) ::Union{Nothing, Int}
     upper_lim = min(upper_lim, length(data) - 1)
     # test until period > upper_lim
 
@@ -124,9 +128,7 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64 =
 
     return nothing
 end
-
-
-
+find_period(txt::Txt, upper_lim::Int, tolerance::Float64) = find_period(periodic_ioc.(Ref(txt), collect(1:upper_lim)), upper_lim, tolerance)
 
 
 
@@ -200,6 +202,10 @@ end
 
 
 function char_distribution(txt::Txt, window::Int, token::Int) ::Vector{Float64}
+    if !txt.is_tokenised
+        error("Txt must be tokenised to perform statistical tests")
+    end
+
     shortend = length(txt) - window
     out = Vector{Float64}(undef, shortend) # appearances of token in window
 
@@ -213,6 +219,10 @@ end
 
 # Entropy
 function entropy(txt::Txt)
+    if !txt.is_tokenised
+        error("Txt must be tokenised to perform statistical tests")
+    end
+
     f = vector_frequencies(txt)
     entropy = sum( - f .* log2.(f))
 

@@ -66,8 +66,13 @@ end
 
 
 
-function orthodot(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq) ::Float64
+function orthodot(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq; ordered = true) ::Float64
     frequencies = vector_frequencies(txt)
+
+    if !ordered
+        frequencies = sort(frequencies)
+        ref_frequencies = sort(ref_frequencies)
+    end
 
     magnitude = sum(frequencies .^ 2) * sum(ref_frequencies .^ 2)
 

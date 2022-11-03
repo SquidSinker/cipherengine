@@ -52,8 +52,12 @@ end
 
 
 
-function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20) ::Vector{Substitution}
-    period = find_period(periodic_ioc.(Ref(txt), collect(1:upper_period_lim)), upper_period_lim)
+function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20, period_tolerance::Float64 = 0.15) ::Vector{Substitution}
+    period = find_period(txt, upper_period_lim, period_tolerance)
+
+    if isnothing(period)
+        error("No period / period could not be found by fw_stdev (if periodicity is certain, try increasing tolerance)")
+    end
 
     vigenere = [Substitution(26) for _ in 1:period]
 
@@ -65,11 +69,15 @@ function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20) ::Vector{Substitut
     return vigenere
 end
 
-function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20) ::Vector{Substitution}
+function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20, period_tolerance::Float64 = 0.15) ::Vector{Substitution}
     coprimes = collect(1:26)
     filter!(x -> gcd(26, x) == 1, coprimes) # STATIC VAR
 
-    period = find_period(periodic_ioc.(Ref(txt), collect(1:upper_period_lim)), upper_period_lim)
+    period = find_period(txt, upper_period_lim, period_tolerance)
+    
+    if isnothing(period)
+        error("No period / period could not be found by fw_stdev (if periodicity is certain, try increasing tolerance)")
+    end
 
     p_affine = [Substitution(26) for _ in 1:period]
 
