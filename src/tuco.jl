@@ -7,6 +7,7 @@ TUCO handles all statistical stuff, including fitness statistics
 include("charspace.jl")
 
 using JLD2
+@load "jld2/quadgram_score_arr.jld2" quadgram_scores_arr
 @load "jld2/quadgram_score_dict.jld2" quadgram_scores
 @load "jld2/monogram_frequency_vector.jld2" monogram_freq
 
@@ -99,6 +100,21 @@ function quadgramlog(txt::Txt) ::Float64
 end
 
 
+function quadgramlog_arr(txt::Txt) ::Float64
+    if txt.character_space != Alphabet_CSpace
+        error("Quadgramlog fitness only works on Alphabet_CSpace")
+    end
+
+    L = length(txt) - 3
+
+    score = 0.0
+    for i in 1:L
+        score += quadgram_scores_arr[ txt.tokenised[i:(i+3)]... ]
+    end
+
+    return score / L
+end
+
 
 
 
@@ -133,6 +149,19 @@ end
 # end
 
 # @save "jld2/quadgram_score_dict.jld2" quadgram_scores = eng_quadgrams
+
+
+# quadgram_scores_arr = Array{Float64}(undef, 26, 26, 26, 26)
+
+# for i in 1:26
+#     for j in 1:26
+#         for k in 1:26
+#             for l in 1:26
+#                 quadgram_scores_arr[i,j,k,l] = get(quadgram_scores, [i, j, k, l], nullfitness)
+#             end
+#         end
+#     end
+# end
 
 
 
