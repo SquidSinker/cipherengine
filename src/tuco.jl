@@ -7,10 +7,12 @@ TUCO handles all statistical stuff, including fitness statistics
 include("charspace.jl")
 
 using JLD2
-@load "jld2/quadgram_score_arr.jld2" quadgram_scores_arr
-@load "jld2/quadgram_score_dict.jld2" quadgram_scores
-@load "jld2/poogramfart.jld2" fart_matrix
-@load "jld2/monogram_frequency_vector.jld2" monogram_freq
+@load "jld2/quadgram_scores.jld2" quadgram_scores_arr
+@load "jld2/quadgram_scores_dict.jld2" quadgram_scores
+@load "jld2/poogramfart_scores.jld2" fart_matrix
+@load "jld2/monogram_frequencies.jld2" monogram_freq
+@load "jld2/bigram_scores.jld2" bigram_scores
+@load "jld2/bigram_frequencies.jld2" bigram_freq
 
 
 # FREQUENCY
@@ -56,6 +58,7 @@ end
 function to_dict(vect::Vector{T}) ::Dict{Int, T} where{T}
     return Dict(collect(1:length(vect)) .=> vect)
 end
+
 
 function sort_by_values(d::Dict)
     a = sort(collect(d), by = x -> x[2])

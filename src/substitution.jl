@@ -54,7 +54,7 @@ function frequency_matched_substitution(txt::Txt, ref_frequencies::Vector{Float6
 
     ref_frequencies = sort_by_values(to_dict(ref_frequencies))
 
-    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:26], txt.character_space) # starts with letters arranged by frequencies against ref_frequencies
+    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in 1:txt.character_space.size], txt.character_space) # starts with letters arranged by frequencies against ref_frequencies
 end
 
 function rand_substitution(size::Int) ::Substitution
