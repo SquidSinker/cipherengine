@@ -167,7 +167,7 @@ find_period(txt::Txt, upper_lim::Int, tolerance::Float64) = find_period(periodic
 function divisors(number::Int) ::Vector{Int}
     # Step 1: find all divisors
     divisors = []
-    for int in 2:number
+    for int in 2:(number >> 1)
         if number % int == 0
             push!(divisors, int)
         end
