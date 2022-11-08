@@ -191,11 +191,9 @@ function factorise(number::Int) ::Vector{Int}
         end
 
         if number == 1
-            break
+            return factors
         end
     end
-
-    return factors
 end
 
 
