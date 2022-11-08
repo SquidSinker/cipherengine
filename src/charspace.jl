@@ -223,6 +223,8 @@ end
 
 
 Alphabet_CSpace = CSpace("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+Bigram_CSpace = Alphabet_CSpace ^ 2
+Trigram_CSpace = Alphabet_CSpace ^3
 Digits_CSpace = CSpace("1234567890")
 Polybius_CSpace = CSpace("12345") ^ 2
 ADFGX_CSpace = CSpace("ADFGX") ^ 2
