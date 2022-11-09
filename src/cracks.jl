@@ -1,6 +1,5 @@
 include("substitution.jl")
 include("tuco.jl")
-include("statistics.jl")
 include("genetics.jl")
 
 

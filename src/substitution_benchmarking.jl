@@ -1,5 +1,4 @@
 include("reinforcement.jl")
-include("statistics.jl")
 
 
 test_gen = 25

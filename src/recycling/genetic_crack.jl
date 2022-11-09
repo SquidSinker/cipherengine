@@ -1,7 +1,7 @@
-include("tuco.jl")
-include("charspace.jl")
-include("substitution.jl")
-include("genetics.jl")
+include("../tuco.jl")
+include("../charspace.jl")
+include("../substitution.jl")
+include("../genetics.jl")
 
 
 
