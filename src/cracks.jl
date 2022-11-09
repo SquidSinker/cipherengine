@@ -1,8 +1,8 @@
 include("substitution.jl")
 include("tuco.jl")
-include("statistics.jl")
 include("genetics.jl")
 
+import IterTools.product
 
 ############# ALL on ALPHABETIC CSPACE (to English)
 
@@ -13,6 +13,37 @@ function optimise(f::Function, inputs::AbstractVector, fitness::Function)
     return inputs[argmax(scores)]
 end
 
+function optimise(f::Symbol, inputs::AbstractArray, fitness::Symbol)
+    scores = [eval(:(  $fitness($f($i...))  )) for i in inputs]
+
+    return inputs[argmax(scores)]
+end
+
+
+
+macro bruteforce(func_call, fitness)
+    arguments = func_call.args[2:end]
+    f = func_call.args[1]
+
+    blank = isequal.(arguments, :(:))
+    test_sets = Vector(undef, length(arguments))
+    for i in 1:length(arguments)
+        if blank[i]
+            param_extraction_args = deepcopy(arguments)
+            param_extraction_args[i] = Colon()
+            try
+                test_sets[i] = eval(:(  $f($param_extraction_args...)  ))
+            catch err
+                error("This function does not have parameter listing defined for this argument")
+            end
+        else
+            test_sets[i] = (arguments[i],)
+        end
+    end
+
+
+    return optimise(f, collect(product(test_sets...)), fitness)
+end
 
 
 
