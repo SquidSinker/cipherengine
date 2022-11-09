@@ -13,6 +13,7 @@ using JLD2
 @load "jld2/monogram_frequencies.jld2" monogram_freq
 @load "jld2/bigram_scores.jld2" bigram_scores
 @load "jld2/bigram_frequencies.jld2" bigram_freq
+@load "jld2/bibigram_scores_arr.jld2" bibigram_scores_arr
 
 
 # FREQUENCY
@@ -294,6 +295,22 @@ function quadgramlog_arr(txt::Txt) ::Float64
     score = 0.0
     for i in 1:L
         score += quadgram_scores_arr[ txt.tokenised[i:(i+3)]... ]
+    end
+
+    return score / L
+end
+
+
+function bibigramlog_arr(txt::Txt) ::Float64
+    if txt.character_space != Bigram_CSpace
+        error("Bibigramlog fitness only works on Bigram_CSpace")
+    end
+
+    L = length(txt) - 1
+
+    score = 0.0
+    for i in 1:L
+        score += bibigram_scores_arr[ txt.tokenised[i], txt.tokenised[i + 1] ]
     end
 
     return score / L

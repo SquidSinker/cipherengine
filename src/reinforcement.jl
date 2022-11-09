@@ -11,7 +11,12 @@ function normal_approx_pd(X, N, p) ::Float64
 end
 
 function normalise(a::Vector) ::Vector
-    return a / sum(a)
+    s = sum(a)
+    if s == 0
+        a = ones(length(a))
+        return a / length(a)
+    end
+    return a / s
 end
 
 
@@ -245,9 +250,9 @@ function debug_linear_reinforcement(
 
 
     if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
-        P = new_PosProbMat(W)
+        P = new_PosProbMat(txt)
 
-        parent_sub = Substitution(W)
+        parent_sub = Substitution(txt.character_space)
 
     else # if given, use best guesses for ppM and substitution
         P = new_PosProbMat(txt, ref_freq)
@@ -263,6 +268,7 @@ function debug_linear_reinforcement(
 
 
     anim = @animate for gen in 1:generations
+        println(gen)
         swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
         delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
@@ -285,7 +291,7 @@ function debug_linear_reinforcement(
         push!(div_log, PosProbMat_divergence(target, P))
 
         heatmap(P, clims = (0,1), aspect_ratio = :equal)
-    end every 10
+    end every 1
 
 
     
@@ -315,9 +321,9 @@ function linear_reinforcement(
 
 
     if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
-        P = new_PosProbMat(W)
+        P = new_PosProbMat(txt)
 
-        parent_sub = Substitution(W)
+        parent_sub = Substitution(txt.character_space)
 
     else # if given, use best guesses for ppM and substitution
         P = new_PosProbMat(txt, ref_freq)
@@ -382,9 +388,9 @@ function benchmark_linear_reinforcement(
 
 
     if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
-        P = new_PosProbMat(W)
+        P = new_PosProbMat(txt)
 
-        parent_sub = Substitution(W)
+        parent_sub = Substitution(txt.character_space)
 
     else # if given, use best guesses for ppM and substitution
         P = new_PosProbMat(txt, ref_freq)
