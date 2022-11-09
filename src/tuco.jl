@@ -323,17 +323,23 @@ function poogramfart(txt::Txt) ::Float64
 end
 
 
+function poogramfast(txt::Txt) ::Float64
+    if txt.character_space != Alphabet_CSpace
+        error("Poogramfast fitness only works on Alphabet_CSpace")
+    end
 
+    L = length(txt) - 3
 
+    score = 0.0
+    for i in 1:L
+        T = txt.tokenised[i:(i+3)]
+        u = unique(T)
+        replace!(T, collect(u[i] => i for i in 1:length(u))...)
+        score += fart_matrix[T]
+    end
 
-
-
-
-
-
-
-
-
+    return score / L
+end
 
 
 
@@ -375,7 +381,7 @@ end
 
 
 
-# fart_matrix = Dict{String, Float64}()
+# fart_matrix = Dict{Vector{Int}, Float64}()
 
 # quadgram_scores_arr = 10 .^ quadgram_scores_arr
 
