@@ -60,8 +60,6 @@ end
 
 
 
-
-
 function uniform_choice_weights(gen, fitness, n)
     return ones(n) / n
 end
@@ -312,9 +310,8 @@ function debug_linear_reinforcement(
         push!(fitness_log, parent_fitness)
         push!(div_log, PosProbMat_divergence(target, P))
 
-        heatmap(P, aspect_ratio = :equal)
+        heatmap(P, clims = (0, 0.5), aspect_ratio = :equal)
     end every 10
-
 
     
     gif(anim, "anim.gif")
@@ -395,75 +392,75 @@ end
 
 
 
-# Tailored to benchmark tests
-function benchmark_linear_reinforcement(
-    inv_target::Substitution,
-    txt::Txt,
-    generations::Int,
-    spawns::Int,
-    choice_weights::Function,
-    fitness::Function,
-    ref_freq::Union{Vector{Float64}, Nothing} = nothing,
-    reinforce_rate::Float64 = 0.5;
-    lineage_habit::String = "ascent"
-)
+# # Tailored to benchmark tests
+# function benchmark_linear_reinforcement(
+#     inv_target::Substitution,
+#     txt::Txt,
+#     generations::Int,
+#     spawns::Int,
+#     choice_weights::Function,
+#     fitness::Function,
+#     ref_freq::Union{Vector{Float64}, Nothing} = nothing,
+#     reinforce_rate::Float64 = 0.5;
+#     lineage_habit::String = "ascent"
+# )
 
 
-    if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
-        P = new_PosProbMat(txt)
+#     if isnothing(ref_freq) # if not given, start with identity substitution and uniform ppM
+#         P = new_PosProbMat(txt)
 
-        parent_sub = Substitution(txt.character_space)
+#         parent_sub = Substitution(txt.character_space)
 
-    else # if given, use best guesses for ppM and substitution
-        P = new_PosProbMat(txt, ref_freq)
+#     else # if given, use best guesses for ppM and substitution
+#         P = new_PosProbMat(txt, ref_freq)
 
-        parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
-        invert!(parent_sub)
-    end
-
-
-    parent_fitness = fitness(apply(parent_sub, txt))
-
-    fitness_arr = Vector{Float64}(undef, generations + 1)
-    fitness_arr[1] = parent_fitness
-    # fitness tracking
-
-    check_if_solved = true
-    solved_in = generations
-
-    for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
-        new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
-        # generates new swaps from ppM and calculates dF
+#         parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
+#         invert!(parent_sub)
+#     end
 
 
-        for ((a, b, m, n), dF) in zip(swaps, delta_F) # Update P with ALL the data
-            update_PosProbMat!(P, a, b, m, n, dF, reinforce_rate)
-        end
+#     parent_fitness = fitness(apply(parent_sub, txt))
 
-        tidy_PosProbMat!(P) # corrects floating point error
+#     fitness_arr = Vector{Float64}(undef, generations + 1)
+#     fitness_arr[1] = parent_fitness
+#     # fitness tracking
+
+#     check_if_solved = true
+#     solved_in = generations
+
+#     for gen in 1:generations
+#         swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
+#         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
+#         delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
+#         # generates new swaps from ppM and calculates dF
+
+
+#         for ((a, b, m, n), dF) in zip(swaps, delta_F) # Update P with ALL the data
+#             update_PosProbMat!(P, a, b, m, n, dF, reinforce_rate)
+#         end
+
+#         tidy_PosProbMat!(P) # corrects floating point error
 
 
 
-        parent_sub, parent_fitness = next_in_lineage(parent_sub, new_substitutions, parent_fitness, delta_F; lineage_habit)
-        # advance lineage
+#         parent_sub, parent_fitness = next_in_lineage(parent_sub, new_substitutions, parent_fitness, delta_F; lineage_habit)
+#         # advance lineage
 
-        fitness_arr[gen + 1] = parent_fitness
+#         fitness_arr[gen + 1] = parent_fitness
 
 
-        if check_if_solved
-            if parent_sub == inv_target
-                solved_in = gen + 1
-                check_if_solved = false
-            end
-        end
+#         if check_if_solved
+#             if parent_sub == inv_target
+#                 solved_in = gen + 1
+#                 check_if_solved = false
+#             end
+#         end
 
-    end
+#     end
 
-    return fitness_arr, solved_in
-    # fitness data // number of generations to solve
-end
+#     return fitness_arr, solved_in
+#     # fitness data // number of generations to solve
+# end
 
 
 
