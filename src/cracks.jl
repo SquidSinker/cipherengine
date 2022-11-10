@@ -87,3 +87,44 @@ function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20, period_tole
     invert!.(p_affine)
     return p_affine
 end
+
+
+
+
+
+
+
+function crack_Columnar(txt::Txt, n::Int)
+    T = reshape(txt.tokenised, (:, n))
+    T = permutedims(T)
+    
+    follow = Matrix{Float64}(undef, n, n)
+    for i in 1:n
+        for j in 1:n
+            follow[i, j] = sum([ bigram_scores[i,j] for (i,j) in zip(T[i, :], T[j, :])])
+        end
+    end
+
+
+    permutation = Vector{Int}(undef, n)
+
+    permutation[1] = argmin(vec(maximum(follow; dims = 2))) # finds which column comes last
+    follow[permutation[1], :] .= -Inf
+
+    show(follow[:, 1])
+    for i in 2:n
+        permutation[i] = argmax(vec(follow[:, i-1]))
+    end
+
+    reverse!(permutation)
+    
+    return permutation
+end
+
+function crack_Columnar(txt::Txt, upperlim = 20)
+    n = divisors(length(txt))
+
+    i = 1
+    while n[i] <= upperlim
+    end
+end

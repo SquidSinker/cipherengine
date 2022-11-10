@@ -3,16 +3,38 @@ include("tuco.jl")
 
 
 
-function normal_approx_pd(X, N, p) ::Float64
+function normal_approx_pd(X::Int, N::Int, p::Float64) ::Float64
     mu = N * p
     var = 2 * mu * (1 - p) # 2 carried through to reduce operations
 
-    return exp(- (X + 0.5 - N * p)^2 / var) / sqrt(pi * var)
+    P = exp(- (X + 0.5 - N * p)^2 / var) / sqrt(pi * var)
+    if P == 0.0
+        return 1e-200
+    end
+
+    return P
 end
+
+function batch_binomial_pd(X::Vector{Int}, N::Int, p::Float64) ::Vector{Float64}
+    mu = N * p
+    var = 2 * mu * (1 - p) # 2 carried through to reduce operations
+
+    M = 7e2 - (maximum(X) - mu)^2 / var
+
+    PX = [exp( M - (x - mu)^2 / var ) for x in X]
+
+    PX = normalise(PX)
+    
+    PX[PX .== 0] .= 1e-300
+
+    return PX
+end
+
+
 
 function normalise(a::Vector) ::Vector
     s = sum(a)
-    if s == 0
+    if s == 0 | isnan(s)
         a = ones(length(a))
         return a / length(a)
     end
@@ -143,7 +165,7 @@ function new_PosProbMat(txt::Txt, ref_freq::Vector{Float64}) ::Matrix
     # Compare each known frequency against ALL token frequencies, find p(token_f = known_f)
     # The comparison is done this way round to predict the INVERSE substitution
     # Normalise these rows, so they sum to 1
-    PosProbMat = vcat(permutedims.([normalise(normal_approx_pd.(tallies, L, i)) for i in ref_freq])...)
+    PosProbMat = vcat(permutedims.([batch_binomial_pd(tallies, L, i) for i in ref_freq])...)
 
     return PosProbMat
 end
@@ -290,8 +312,8 @@ function debug_linear_reinforcement(
         push!(fitness_log, parent_fitness)
         push!(div_log, PosProbMat_divergence(target, P))
 
-        heatmap(P, clims = (0,1), aspect_ratio = :equal)
-    end every 1
+        heatmap(P, aspect_ratio = :equal)
+    end every 10
 
 
     

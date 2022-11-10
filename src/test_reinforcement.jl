@@ -24,20 +24,12 @@ apply!(S, txt)
 
 println("Beginning test...")
 
-function fitness(a::Txt) ::Float64
-    txt = a
-    untokenise!(txt)
-    tokenise!(txt, Alphabet_CSpace)
-
-    return quadgramlog_arr(txt)
-end
-
 
 # using BenchmarkTools
 # @btime (PMatrix, cracked) = linear_reinforcement(txt, 100, 10, Choice_Weights, quadgramlog, eng, 3.0; lineage_habit = "floored ascent")
 
 
 
-(PMatrix, cracked, fitnesses, divergences) = debug_linear_reinforcement(S, txt, 500, 10, uniform_choice_weights, bibigramlog_arr, bigram_freq_vec, 7.0; lineage_habit = "floored ascent")
+(PMatrix, cracked, fitnesses, divergences) = debug_linear_reinforcement(S, txt, 100, 2000, uniform_choice_weights, bibigramlog_arr, bigram_freq_vec, 7.0; lineage_habit = "floored ascent")
 plot(fitnesses, label = "S fitness")
-plot!(divergences, label = "ppM divergence")
+plot!(divergences / maximum(divergences), label = "ppM divergence")
