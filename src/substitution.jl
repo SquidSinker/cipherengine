@@ -1,6 +1,7 @@
 import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex
 import Random.shuffle!
 include("charspace.jl")
+include("cipher.jl")
 
 #=
 
@@ -11,7 +12,7 @@ The only admitted tokens are integers (aka. preprocessed character space)
 
 
 # S[i] returns j if i -> j
-mutable struct Substitution
+mutable struct Substitution <: AbstractCipher
     mapping::Vector{Int}
     size::Int
     tokens::Vector{Int}
@@ -107,35 +108,15 @@ end
 
 
 # Applies Substitution to Integer Vectors
-function apply(S::Substitution, vect::Vector{Int}) ::Vector{Int}
+function apply(S::Substitution, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
+    if safety_checks.character_space.size != S.size
+        println("WARNING: Substitution size does not match size of Character Space")
+    end
+
     return getindex.(Ref(S), vect)
 end
 
-function apply!(S::Substitution, vect::Vector{Int}) ::Vector{Int}
-    copyto!(vect, apply(S, vect))
-    return vect
-end
 
-
-# Applies Substitution to Txt
-function apply!(S::Substitution, txt::Txt) ::Txt
-    if !txt.is_tokenised
-        error("Cannot apply Substitution to untokenised Txt")
-    end
-
-    if txt.character_space.size != S.size
-        error("Substitution size must match size of Character Space")
-    end
-
-    apply!(S, txt.tokenised)
-    return txt
-end
-
-apply(S::Substitution, txt::Txt) ::Txt = apply!(S, deepcopy(txt))
-
-
-
-(S::Substitution)(txt::Txt) ::Txt = apply(S, txt)
 
 
 
