@@ -9,7 +9,7 @@ include("charspace.jl")
 using JLD2
 @load "jld2/quadgram_scores.jld2" quadgram_scores_arr
 @load "jld2/quadgram_scores_dict.jld2" quadgram_scores
-@load "jld2/poogramfart_scores.jld2" fart_matrix
+@load "jld2/poogramfart_scores.jld2" poogram_scores
 @load "jld2/monogram_frequencies.jld2" monogram_freq
 @load "jld2/bigram_scores.jld2" bigram_scores
 @load "jld2/bigram_frequencies.jld2" bigram_freq
@@ -307,6 +307,10 @@ end
 
 
 
+
+
+
+# 93% improvement
 function poogramfart(txt::Txt) ::Float64
     if txt.character_space != Alphabet_CSpace
         error("Poogramfart fitness only works on Alphabet_CSpace")
@@ -316,29 +320,27 @@ function poogramfart(txt::Txt) ::Float64
 
     score = 0.0
     for i in 1:L
-        score += fart_matrix[ txt.tokenised[i:(i+3)]... ]
+        score += poogram_scores[ generate_structure_tag(txt.tokenised[i:i+3]) ]
     end
 
     return score / L
 end
 
+# Essentially a hashing algorithm
+function generate_structure_tag(quadgram::Vector{Int}) ::Int
+    tag = 0
 
-function poogramfast(txt::Txt) ::Float64
-    if txt.character_space != Alphabet_CSpace
-        error("Poogramfast fitness only works on Alphabet_CSpace")
+    for (i, item) in enumerate(quadgram)
+        ident = 0
+
+        for j in 1:4
+            ident |= ((quadgram[j] == item) << (j-1))
+        end
+
+        tag |= (ident << (4 * (i-1)))
     end
 
-    L = length(txt) - 3
-
-    score = 0.0
-    for i in 1:L
-        T = txt.tokenised[i:(i+3)]
-        u = unique(T)
-        replace!(T, collect(u[i] => i for i in 1:length(u))...)
-        score += fart_matrix[T]
-    end
-
-    return score / L
+    return tag
 end
 
 
@@ -381,7 +383,7 @@ end
 
 
 
-# fart_matrix = Dict{Vector{Int}, Float64}()
+# fart_matrix = Dict{Int, Float64}()
 
 # quadgram_scores_arr = 10 .^ quadgram_scores_arr
 
@@ -407,7 +409,7 @@ end
 #     for j in 1:26
 #         for k in 1:26
 #             for l in 1:26
-#                 structure = determine_struct([i,j,k,l])
+#                 structure = generate_structure_tag([i,j,k,l])
 #                 value = get(fart_matrix, structure, nothing)
 #                 if isnothing(value)
 #                     fart_matrix[structure] = 0.0

@@ -193,6 +193,7 @@ function Caesar(shift::Int, size::Int) ::Substitution
     return s
 end
 Caesar(shift::Int, W::CSpace) ::Substitution = Caesar(shift::Int, W.size)
+Caesar(colon::Colon, size::Int) ::Tuple = Tuple(1:size)
 
 function Affine(a::Int, b::Int, size::Int) ::Substitution
     if gcd(a, size) != 1
