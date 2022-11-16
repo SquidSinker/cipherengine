@@ -186,6 +186,9 @@ function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_froze
     raw = get(txt.frozen, 0, "")
     n = 0
     for token in txt.tokenised
+        if !(token in W.tokens)
+            continue
+        end
         char = W.chars[token]
         if restore_case && !txt.case_sensitive
             raw *= txt.cases[1 + length(raw)] ? uppercase(char) : lowercase(char)
