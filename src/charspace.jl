@@ -142,7 +142,7 @@ function show(io::IO, ::MIME"text/plain", txt::Txt)
 end
 
 
-function tokenise(txt::Txt, W::CSpace) ::Tuple{Vector{Int}, Dict{Int, String}}
+function tokenise(txt::Txt, W::CSpace = Alphabet_CSpace) ::Tuple{Vector{Int}, Dict{Int, String}}
 
     if !txt.case_sensitive && join(W.chars) != uppercase(join(W.chars))
         error("Case-insensitive text cannot be tokenised by a case-sensitive CSpace")
@@ -199,7 +199,7 @@ function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_froze
 end
 
 
-function tokenise!(txt::Txt, W::CSpace) ::Txt
+function tokenise!(txt::Txt, W::CSpace = Alphabet_CSpace) ::Txt
     tokenised, frozen = tokenise(txt, W)
     txt.character_space = W
     txt.frozen = frozen
