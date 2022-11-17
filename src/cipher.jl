@@ -4,7 +4,7 @@ abstract type AbstractCipher end
 
 function apply!(C::AbstractCipher, txt::Txt) ::Txt
     if !txt.is_tokenised
-        error("Cannot apply Cipher to untokenised Txt")
+        error("Cannot apply cipher to untokenised Txt")
     end
 
     txt.tokenised = apply(C, txt.tokenised; safety_checks = txt)
