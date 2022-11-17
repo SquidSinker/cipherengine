@@ -157,7 +157,8 @@ function tokenise(txt::Txt, W::CSpace = Alphabet_CSpace) ::Tuple{Vector{Int}, Di
 
         if isnothing(char_index) # if text doesn't start with any of W.chars
             frozen[length(tokenised)] = get(frozen, length(tokenised), "") * text[1]
-            text = text[2:end] # shave text by 1
+            i = nextind(text, 1)
+            text = text[i:end] # shave text by 1
             continue
         end
 
