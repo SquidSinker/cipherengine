@@ -213,43 +213,75 @@ Affine(a::Int, b::Int, W::CSpace) ::Substitution = Affine(a, b, W.size)
 
 ############ MULTI Substitutions FRAMEWORK ################################################
 
-# Applies MultiSubstitution to Integer Vectors
-function apply!(S::Vector{Substitution}, vect::Vector{Int}) ::Vector{Int}
-    period = length(S)
+mutable struct PeriodicSubstitution <: AbstractCipher
+    subs::Tuple
+    length::Int
 
-    for (i, j) in enumerate(S)
-        vect[i:period:end] .= apply(j, vect[i:period:end])
+    function PeriodicSubstitution(substitutions::Substitution...)
+        size_one = substitutions[1].size
+        if any([i.size != size_one for i in substitutions])
+            error("All Substitutions must be of the same size")
+        end
+
+        new(substitutions, length(substitutions))
+    end
+end
+PeriodicSubstitution(substitutions::PeriodicSubstitution) = PeriodicSubstitution(substitutions...)
+
+getindex(S::PeriodicSubstitution, inds) = getindex(S.subs, inds)
+
+# Applies MultiSubstitution to Integer Vectors
+function apply(S::PeriodicSubstitution, vector::Vector{Int}; safety_checks::Txt) ::Vector{Int}
+    vect = Vector{Int}(undef, length(vector))
+
+    for (i, j) in enumerate(S.subs)
+        vect[i:S.length:end] .= apply(j, vector[i:S.length:end]; safety_checks = safety_checks)
     end
 
     return vect
 end
-apply(S::Vector{Substitution}, vect::Vector{Int}) ::Vector{Int} = apply!(S, deepcopy(vect))
 
 
-# Applies MultiSubstitution to Txt
-function apply!(S::Vector{Substitution}, txt::Txt) ::Txt
-    if !txt.is_tokenised
-        error("Cannot apply Substitution to untokenised Txt")
+function show(io::IO, S::PeriodicSubstitution)
+    if S.length > 8
+        for i in 1:8
+            show(io, S[i])
+            print("\n")
+        end
+
+        for _ in 1:3
+            print(".\n")
+        end
+
+    else
+        for sub in S.subs
+            show(io, sub)
+            print("\n")
+        end
+
     end
-
-    size = S[1].size
-
-    if any(length.(S) .!= size)
-        error("All Substitutions in a Vector must have the same length")
-    end
-
-    if txt.character_space.size != size
-        error("Substitution size must match size of Character Space")
-    end
-
-    apply!(S, txt.tokenised)
-    return txt
 end
-apply(S::Vector{Substitution}, txt::Txt) ::Txt = apply!(S, deepcopy(txt))
 
+function show(io::IO, ::MIME"text/plain", S::PeriodicSubstitution)
+    println(io, "$(S[1].size)-element $(S.length)-Periodic Substitution:")
+    if S.length > 8
+        for i in 1:8
+            show(io, S[i])
+            print("\n")
+        end
 
+        for _ in 1:3
+            print(".\n")
+        end
 
-(S::Vector{Substitution})(txt::Txt) ::Txt = apply(S, txt)
+    else
+        for sub in S.subs
+            show(io, sub)
+            print("\n")
+        end
+        
+    end
+end
 
 
 
@@ -257,14 +289,14 @@ apply(S::Vector{Substitution}, txt::Txt) ::Txt = apply!(S, deepcopy(txt))
 
 
 # Presets
-function Vigenere(vect::Vector{Int}, size::Union{Int, CSpace}) ::Vector{Substitution}
-    return [Caesar(i, size) for i in vect]
+function Vigenere(vect::Vector{Int}, size::Union{Int, CSpace}) ::PeriodicSubstitution
+    return PeriodicSubstitution([Caesar(i, size) for i in vect])
 end
-Vigenere(vect::Vector{String}, W::CSpace) ::Vector{Substitution} = Vigenere(tokenise.(vect, Ref(W)) .- 1, W) # Subtracting one to standardise for 0-based indexing
-Vigenere(vect::Vector{Char}, W::CSpace) ::Vector{Substitution} = Vigenere(string.(vect), W)
-Vigenere(string::String, W::CSpace) ::Vector{Substitution} = W.n == 1 ? Vigenere(collect(string), W) : error("Character Space must be 1-gram for String argument to be tokenised")
+Vigenere(vect::Vector{String}, W::CSpace) ::PeriodicSubstitution = Vigenere(tokenise.(vect, Ref(W)) .- 1, W) # Subtracting one to standardise for 0-based indexing
+Vigenere(vect::Vector{Char}, W::CSpace) ::PeriodicSubstitution = Vigenere(string.(vect), W)
+Vigenere(string::String, W::CSpace) ::PeriodicSubstitution = W.n == 1 ? Vigenere(collect(string), W) : error("Character Space must be 1-gram for String argument to be tokenised")
 
-function Periodic_Affine(vect::Vector{Tuple{Int, Int}}, size::Union{Int, CSpace}) ::Vector{Substitution}
-    return [Affine(a, b, size) for (a, b) in vect]
+function Periodic_Affine(vect::Vector{Tuple{Int, Int}}, size::Union{Int, CSpace}) ::PeriodicSubstitution
+    return PeriodicSubstitution([Affine(a, b, size) for (a, b) in vect])
 end
-Periodic_Affine(vecta::Vector{Int}, vectb::Vector{Int}, size::Union{Int, CSpace}) ::Vector{Substitution} = length(vecta) == length(vectb) ? Periodic_Affine(collect(zip(vecta, vectb)), size) : error("Parameter vectors must have same length")
+Periodic_Affine(vecta::Vector{Int}, vectb::Vector{Int}, size::Union{Int, CSpace}) ::PeriodicSubstitution = length(vecta) == length(vectb) ? Periodic_Affine(collect(zip(vecta, vectb)), size) : error("Parameter vectors must have same length")
