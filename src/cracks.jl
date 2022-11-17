@@ -93,7 +93,7 @@ function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20, period_tolerance::
     vigenere = [Substitution(26) for _ in 1:period]
 
     for i in 1:period
-        vigenere = optimise(x -> apply(x, txt), [setindex!(copy(vigenere), Caesar(shift, 26), i) for shift in 1:26], quadgramlog)
+        vigenere = optimise(x -> apply(x::AbstractCipher, txt), [setindex!(copy(vigenere), Caesar(shift, 26), i) for shift in 1:26], quadgramlog)
     end
 
     invert!.(vigenere)
