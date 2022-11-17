@@ -2,6 +2,8 @@ include("charspace.jl")
 include("cipher.jl")
 import Base.show
 
+NULL = 0
+
 
 
 abstract type AbstractTransposition <: AbstractCipher end
@@ -24,9 +26,11 @@ mutable struct ColumnarType <: AbstractTransposition
     permutation::Vector{Int}
     transposed::Bool
 
+    remove_nulls::Bool
+
     inverted::Bool
 
-    function ColumnarType(n::Int, permutation::Vector{Int}, transposed::Bool, inverted::Bool = false)
+    function ColumnarType(n::Int, permutation::Vector{Int}, transposed::Bool, remove_nulls::Bool = false, inverted::Bool = false)
         if length(permutation) != n
             error("Permutation must be of the same length as the reshape")
         end
@@ -35,11 +39,11 @@ mutable struct ColumnarType <: AbstractTransposition
             error("Permutation must contain all integers from 1 to n only once")
         end
 
-        new(n, permutation, transposed, inverted)
+        new(n, permutation, transposed, remove_nulls, inverted)
     end
 end
-ColumnarType(n::Int, permutation::Nothing, transposed::Bool, inverted::Bool = false) = ColumnarType(n, collect(1:n), transposed, inverted)
-ColumnarType(permutation::Vector{Int}, transposed::Bool, inverted::Bool = false) = ColumnarType(length(permutation), permutation, transposed, inverted)
+ColumnarType(n::Int, permutation::Nothing, transposed::Bool, remove_nulls::Bool = false, inverted::Bool = false) = ColumnarType(n, collect(1:n), transposed, remove_nulls, inverted)
+ColumnarType(permutation::Vector{Int}, transposed::Bool, remove_nulls::Bool = false, inverted::Bool = false) = ColumnarType(length(permutation), permutation, transposed, remove_nulls, inverted)
 
 
 function Scytale(n::Int)
@@ -50,7 +54,7 @@ function Columnar(permutation::Vector{Int})
     return ColumnarType(permutation, true)
 end
 
-function PeriodicTransposition(permutation::Vector{Int})
+function Permutation(permutation::Vector{Int})
     return ColumnarType(permutation, false)
 end
 
@@ -125,7 +129,7 @@ end
 
 function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     if T.inverted # inverse application
-        new_tokens = reinsert_nulls!(vect, T, 0)
+        new_tokens = reinsert_nulls!(vect, T, NULL)
         new_tokens = reshape(new_tokens, (:, T.n))
 
         if T.transposed
@@ -134,10 +138,16 @@ function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{
 
         inv_permutation = [findfirst(==(i), T.permutation) for i in 1:T.n]
 
-        return vec(new_tokens[inv_permutation, :])
+        new_tokens = vec(new_tokens[inv_permutation, :])
+
+        if T.remove_nulls
+            return deleteat!(new_tokens, findall(==(NULL), new_tokens))
+        else
+            return new_tokens
+        end
 
     else # regular application
-        new_tokens = safe_reshape_2D(vect, T.n, 0)
+        new_tokens = safe_reshape_2D(vect, T.n, NULL)
 
         if T.transposed
             new_tokens = permutedims(new_tokens[T.permutation, :])
@@ -145,7 +155,14 @@ function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{
             new_tokens = new_tokens[T.permutation, :]
         end
 
-        return vec(new_tokens)
+        new_tokens = vec(new_tokens)
+
+        if T.remove_nulls
+            return deleteat!(new_tokens, findall(==(NULL), new_tokens))
+        else
+            return new_tokens
+        end
+
     end
 
 end
