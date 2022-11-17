@@ -13,8 +13,6 @@ function invert!(T::AbstractTransposition)
     return T
 end
 
-invert(T::AbstractTransposition) = invert!(deepcopy(T))
-
 
 
 

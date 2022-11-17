@@ -87,8 +87,6 @@ getindex(S::Substitution, i::Int) ::Int = getindex(S.mapping, i)
 
 
 # if S: i -> j     invert(S): j -> i
-invert(S::Substitution) = Substitution([findfirst(==(i), S.mapping) for i in S.tokens], S.size, S.tokens)
-
 function invert!(self::Substitution) ::Substitution
     self.mapping = [findfirst(==(i), self.mapping) for i in self.tokens]
     return self

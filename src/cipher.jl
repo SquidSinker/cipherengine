@@ -1,3 +1,4 @@
+include("charspace.jl")
 import Base.push!, Base.iterate
 
 abstract type AbstractCipher end
@@ -21,14 +22,22 @@ end
 
 (C::AbstractCipher)(txt::Txt) = apply(C, txt)
 
-
+invert(C::AbstractCipher) = invert!(deepcopy(C))
 
 
 
 
 mutable struct Encryption
     ciphers::Vector{AbstractCipher}
+
+    inverted::Bool
+
+    function Encryption(layers::Vector{AbstractCipher})
+        new(layers, false)
+    end
 end
+
+Encryption(args::AbstractCipher...) = Encryption(args)
 
 function push!(E::Encryption, C::AbstractCipher)
     push!(E.ciphers, C)
@@ -39,6 +48,12 @@ iterate(E::Encryption) = iterate(E.ciphers)
 
 (C::AbstractCipher)(D::AbstractCipher) = Encryption([C, D])
 (C::AbstractCipher)(E::Encryption) = push!(Encryption, C)
+
+function invert!(E::Encryption)
+    invert!.(E.ciphers)
+    reverse!(E.ciphers)
+    return E
+end
 
 function apply!(E::Encryption, txt::Txt) ::Txt
     if !txt.is_tokenised
@@ -66,8 +81,22 @@ end
 
 
 
-struct Lambda <: AbstractCipher
+mutable struct Lambda <: AbstractCipher
     func::Function
+    inv_func::Union{Function, Nothing}
+
+    function Lambda(f::Function, inv_func::Union{Function, Nothing} = nothing)
+        new(f, inv_func)
+    end
+end
+
+function invert!(L::Lambda)
+    if isnothing(L.inv_func)
+        error("Inverse function not given, cannot invert")
+    end
+
+    L.func, L.inv_func = L.inv_func, L.func
+    return L
 end
 
 apply(L::Lambda, v::Vector{Int}; safety_checks::Txt) = L.func.(v)
