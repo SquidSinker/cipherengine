@@ -19,7 +19,6 @@ mutable struct Keystream <: AbstractCipher
     end
 end
 Keystream(txt::Txt, continuation_mode::String = "blank") ::Keystream = txt.is_tokenised ? Keystream(txt.tokenised, continuation_mode) : error("Txt must be tokenised to create Keystream")
-Keystream(txt::Txt, continuation_mode::String = "blank") ::Keystream = Keystream(txt, continuation_mode)
 
 Keystream(vect::Vector{String}, W::CSpace, continuation_mode::String = "blank") ::Keystream = Keystream(tokenise.(vect, Ref(W)) .- 1, continuation_mode) # Subtracting one to standardise for 0-based indexing
 Keystream(vect::Vector{Char}, W::CSpace, continuation_mode::String = "blank") ::Keystream = Keystream(string.(vect), W, continuation_mode)
