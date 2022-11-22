@@ -2,7 +2,7 @@ include("charspace.jl")
 include("cipher.jl")
 import Base.show
 
-NULL = 0
+const NULL = 0
 
 
 

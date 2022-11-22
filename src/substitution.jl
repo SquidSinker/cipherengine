@@ -224,7 +224,7 @@ mutable struct PeriodicSubstitution <: AbstractCipher
         new(substitutions, length(substitutions))
     end
 end
-PeriodicSubstitution(substitutions::PeriodicSubstitution) = PeriodicSubstitution(substitutions...)
+PeriodicSubstitution(substitutions::Vector{Substitution}) = PeriodicSubstitution(substitutions...)
 
 getindex(S::PeriodicSubstitution, inds) = getindex(S.subs, inds)
 
