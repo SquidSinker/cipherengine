@@ -40,6 +40,10 @@ end
 Encryption(args::AbstractCipher...) = Encryption(args)
 
 function push!(E::Encryption, C::AbstractCipher)
+    if E.inverted
+        error("Pushing to inverted Encryption not yet implemented")
+        return
+    end
     push!(E.ciphers, C)
     return E
 end
@@ -48,10 +52,14 @@ iterate(E::Encryption) = iterate(E.ciphers)
 
 (C::AbstractCipher)(D::AbstractCipher) = Encryption([C, D])
 (C::AbstractCipher)(E::Encryption) = push!(Encryption, C)
+# TODO:
+# other way round of line 54
+# make combinbing Encryption with Cipher work with inverted Encryptions
 
 function invert!(E::Encryption)
     invert!.(E.ciphers)
     reverse!(E.ciphers)
+    E.inverted = !E.inverted
     return E
 end
 
@@ -100,3 +108,28 @@ function invert!(L::Lambda)
 end
 
 apply(L::Lambda, v::Vector{Int}; safety_checks::Txt) = L.func.(v)
+
+
+struct Retokenisation <: AbstractCipher
+    OldCSpace::CSpace
+    NewCSpace::CSpace
+
+    function Retokenisation(W1::CSpace, W2::CSpace)
+        new(W1, W2)
+    end
+end
+
+apply(R::Retokenisation, v::Vector{Int}; safety_checks::Txt) = tokenise(untokenise(safety_checks, R.OldCSpace), R.NewCSpace)
+
+
+function ADFGX(S, T) ::Encryption
+    if S.size != 26
+        error("ADFGX ciphertree only applies to Alphabetic text (size of W must be 26)")
+    end
+    x = Retokenisation(ADFGX_CSpace, Alphabet_CSpace)(S)
+    x = T(x)
+
+    return x
+end
+ADFGX(args_T) = ADFGX(Substitution(26), Columnar(args_T))
+ADFGX(args_S, args_T) = ADFGX(Substitution(args_S, 26), Columnar(args_T))
