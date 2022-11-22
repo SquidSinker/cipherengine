@@ -120,16 +120,3 @@ struct Retokenisation <: AbstractCipher
 end
 
 apply(R::Retokenisation, v::Vector{Int}; safety_checks::Txt) = tokenise(untokenise(safety_checks, R.OldCSpace), R.NewCSpace)
-
-
-function ADFGX(S, T) ::Encryption
-    if S.size != 26
-        error("ADFGX ciphertree only applies to Alphabetic text (size of W must be 26)")
-    end
-    x = Retokenisation(ADFGX_CSpace, Alphabet_CSpace)(S)
-    x = T(x)
-
-    return x
-end
-ADFGX(args_T) = ADFGX(Substitution(26), Columnar(args_T))
-ADFGX(args_S, args_T) = ADFGX(Substitution(args_S, 26), Columnar(args_T))
