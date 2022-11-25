@@ -13,6 +13,21 @@ function optimise(f::Function, inputs::AbstractVector, fitness::Function)
     return inputs[argmax(scores)]
 end
 
+function optimise!(f::Function, setinput!::Function, obj, inputs::AbstractVector, fitness::Function)
+    obj_copy = deepcopy(obj)
+
+    scores = Vector{Float64}(undef, length(inputs))
+
+    for (i, input) in enumerate(inputs)
+        setinput!(obj, input)
+        scores[i] = fitness(f(obj))
+    end
+
+    setinput!(obj_copy, inputs[argmax(scores)])
+
+    return obj_copy
+end
+
 function optimise(f::Symbol, inputs::AbstractArray, fitness::Symbol)
     scores = [eval(:(  $fitness($f($i...))  )) for i in inputs]
 
@@ -83,37 +98,42 @@ end
 
 
 
-function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20, period_tolerance::Float64 = 0.15) ::Vector{Substitution}
+function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20; period_tolerance::Float64 = 0.15, pass_num::Int = 2) ::PeriodicSubstitution
     period = find_period(txt, upper_period_lim, period_tolerance)
 
     if isnothing(period)
         error("No period / period could not be found by fw_stdev (if periodicity is certain, try increasing tolerance)")
     end
 
-    vigenere = [Substitution(26) for _ in 1:period]
+    vigenere = Vigenere(period, 26) # Blank Vigenere
 
-    for i in 1:period
-        vigenere = optimise(x -> apply(x::AbstractCipher, txt), [setindex!(copy(vigenere), Caesar(shift, 26), i) for shift in 1:26], quadgramlog)
+    for pass in 1:pass_num
+        for i in 1:period
+            vigenere = optimise!(x -> apply(x::AbstractCipher, txt), (x, y) -> setindex!(x, y, i), vigenere, [Caesar(shift, 26) for shift in 1:26], quadgramlog)
+        end
     end
 
     invert!.(vigenere)
     return vigenere
 end
 
-function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20, period_tolerance::Float64 = 0.15) ::Vector{Substitution}
-    coprimes = collect(1:26)
-    filter!(x -> gcd(26, x) == 1, coprimes) # STATIC VAR
 
+
+coprimes = collect(1:26)
+filter!(x -> gcd(26, x) == 1, coprimes)
+function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20; period_tolerance::Float64 = 0.15, pass_num::Int = 2) ::PeriodicSubstitution
     period = find_period(txt, upper_period_lim, period_tolerance)
     
     if isnothing(period)
         error("No period / period could not be found by fw_stdev (if periodicity is certain, try increasing tolerance)")
     end
 
-    p_affine = [Substitution(26) for _ in 1:period]
+    p_affine = Periodic_Affine(period, 26)
 
-    for i in 1:period # Quadgramlog is SLOW
-        p_affine = optimise(x -> apply(x, txt), [setindex!(copy(p_affine), Affine(a, b, 26), i) for a in coprimes for b in 1:26], quadgramlog)
+    for pass in 1:pass_num
+        for i in 1:period
+            p_affine = optimise!(x -> apply(x::AbstractCipher, txt), (x, y) -> setindex!(x, y, i), p_affine, [Affine(b, a, 26) for a in 1:26 for b in coprimes], quadgramlog)
+        end
     end
 
     invert!.(p_affine)

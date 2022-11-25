@@ -1,4 +1,4 @@
-import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex
+import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex, Base.iterate
 import Random.shuffle!
 include("charspace.jl")
 include("cipher.jl")
@@ -80,6 +80,8 @@ end
 
 
 getindex(S::Substitution, i::Int) ::Int = getindex(S.mapping, i)
+iterate(S::Substitution) = iterate(S.mapping)
+iterate(S::Substitution, i::Integer) = iterate(S.mapping, i)
 
 
 # Checks whether A and B are identical Substitutions
@@ -99,7 +101,7 @@ function +(a::Substitution, b::Substitution) ::Substitution
         error("Substitutions must have the same length")
     end
 
-    Substitution([b[i] for i in a.mapping], b.character_space)
+    Substitution([b[i] for i in a], b.character_space)
 end
 
 -(a::Substitution, b::Substitution) ::Substitution = a + invert(b)
@@ -188,113 +190,3 @@ function Affine(a::Int, b::Int, size::Int) ::Substitution
     return s
 end
 Affine(a::Int, b::Int, W::CSpace) ::Substitution = Affine(a, b, W.size)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############ MULTI Substitutions FRAMEWORK ################################################
-
-mutable struct PeriodicSubstitution <: AbstractCipher
-    subs::Tuple
-    length::Int
-
-    function PeriodicSubstitution(substitutions::Substitution...)
-        size_one = substitutions[1].size
-        if any([i.size != size_one for i in substitutions])
-            error("All Substitutions must be of the same size")
-        end
-
-        new(substitutions, length(substitutions))
-    end
-end
-PeriodicSubstitution(substitutions::PeriodicSubstitution) = PeriodicSubstitution(substitutions...)
-
-getindex(S::PeriodicSubstitution, inds) = getindex(S.subs, inds)
-
-# Applies MultiSubstitution to Integer Vectors
-function apply(S::PeriodicSubstitution, vector::Vector{Int}; safety_checks::Txt) ::Vector{Int}
-    vect = Vector{Int}(undef, length(vector))
-
-    for (i, j) in enumerate(S.subs)
-        vect[i:S.length:end] .= apply(j, vector[i:S.length:end]; safety_checks = safety_checks)
-    end
-
-    return vect
-end
-
-
-function show(io::IO, S::PeriodicSubstitution)
-    if S.length > 8
-        for i in 1:8
-            show(io, S[i])
-            print("\n")
-        end
-
-        for _ in 1:3
-            print(".\n")
-        end
-
-    else
-        for sub in S.subs
-            show(io, sub)
-            print("\n")
-        end
-
-    end
-end
-
-function show(io::IO, ::MIME"text/plain", S::PeriodicSubstitution)
-    println(io, "$(S[1].size)-element $(S.length)-Periodic Substitution:")
-    if S.length > 8
-        for i in 1:8
-            show(io, S[i])
-            print("\n")
-        end
-
-        for _ in 1:3
-            print(".\n")
-        end
-
-    else
-        for sub in S.subs
-            show(io, sub)
-            print("\n")
-        end
-        
-    end
-end
-
-
-
-
-
-
-# Presets
-function Vigenere(vect::Vector{Int}, size::Union{Int, CSpace}) ::PeriodicSubstitution
-    return PeriodicSubstitution([Caesar(i, size) for i in vect])
-end
-Vigenere(vect::Vector{String}, W::CSpace) ::PeriodicSubstitution = Vigenere(tokenise.(vect, Ref(W)) .- 1, W) # Subtracting one to standardise for 0-based indexing
-Vigenere(vect::Vector{Char}, W::CSpace) ::PeriodicSubstitution = Vigenere(string.(vect), W)
-Vigenere(string::String, W::CSpace) ::PeriodicSubstitution = W.n == 1 ? Vigenere(collect(string), W) : error("Character Space must be 1-gram for String argument to be tokenised")
-
-function Periodic_Affine(vect::Vector{Tuple{Int, Int}}, size::Union{Int, CSpace}) ::PeriodicSubstitution
-    return PeriodicSubstitution([Affine(a, b, size) for (a, b) in vect])
-end
-Periodic_Affine(vecta::Vector{Int}, vectb::Vector{Int}, size::Union{Int, CSpace}) ::PeriodicSubstitution = length(vecta) == length(vectb) ? Periodic_Affine(collect(zip(vecta, vectb)), size) : error("Parameter vectors must have same length")
