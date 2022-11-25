@@ -11,7 +11,10 @@ include("tuco.jl")
 const NULLTXT = Txt("")
 
 function test_cspace()
-    @test tokenise!(orwell).tokenised == orwell_tokens
+    t = orwell.raw
+    T = Txt(t)
+    @test tokenise!(T).tokenised == orwell_tokens
+    @test untokenise!(T).raw == t
 
     return nothing
 end
