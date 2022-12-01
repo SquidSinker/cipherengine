@@ -135,7 +135,7 @@ end
 
 
 
-function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; weight_ratio ::Float64 = 0.5) ::Union{Nothing, Int}
+function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; weight_ratio ::Float64 = 0.65, silent::Bool = false) ::Union{Nothing, Int}
     upper_lim = min(upper_lim, length(data) - 1)
     # test until period > upper_lim
 
@@ -152,6 +152,9 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; 
         avg_error /= n
 
         if avg_error < threshold # if the periodic std_dev is below the threshold
+            if !silent
+                println("ρ: ", round(avg_error / fw_stdev(data, weight_ratio); sigdigits = 3), " σ")
+            end
             return n
             break
         end
@@ -159,8 +162,7 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; 
 
     return nothing
 end
-find_period(txt::Txt, upper_lim::Int, tolerance::Float64) = find_period(periodic_ioc.(Ref(txt), collect(1:upper_lim)), upper_lim, tolerance)
-
+find_period(txt::Txt, upper_lim::Int, tolerance::Float64; weight_ratio ::Float64 = 0.65, silent::Bool = false) = find_period(periodic_ioc.(Ref(txt), collect(1:upper_lim)), upper_lim, tolerance; weight_ratio = weight_ratio, silent = silent)
 
 
 
@@ -270,22 +272,6 @@ end
 const nullfitness = log10(0.1/4224127912)
 
 function quadgramlog(txt::Txt) ::Float64
-    if txt.character_space != Alphabet_CSpace
-        error("Quadgramlog fitness only works on Alphabet_CSpace")
-    end
-
-    L = length(txt) - 3
-
-    score = 0.0
-    for i in 1:L
-        score += get(quadgram_scores, txt.tokenised[i:(i+3)], nullfitness)
-    end
-
-    return score / L
-end
-
-
-function quadgramlog_arr(txt::Txt) ::Float64
     if txt.character_space != Alphabet_CSpace
         error("Quadgramlog fitness only works on Alphabet_CSpace")
     end

@@ -98,8 +98,8 @@ end
 
 
 
-function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20; period_tolerance::Float64 = 0.15, pass_num::Int = 2) ::PeriodicSubstitution
-    period = find_period(txt, upper_period_lim, period_tolerance)
+function crack_Vigenere(txt::Txt, upper_period_lim::Int = 20; period_tolerance::Float64 = 0.15, pass_num::Int = 2, silent::Bool = true) ::PeriodicSubstitution
+    period = find_period(txt, upper_period_lim, period_tolerance; silent = silent)
 
     if isnothing(period)
         error("No period / period could not be found by fw_stdev (if periodicity is certain, try increasing tolerance)")
@@ -121,8 +121,8 @@ end
 
 coprimes = collect(1:26)
 filter!(x -> gcd(26, x) == 1, coprimes)
-function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20; period_tolerance::Float64 = 0.15, pass_num::Int = 2) ::PeriodicSubstitution
-    period = find_period(txt, upper_period_lim, period_tolerance)
+function crack_Periodic_Affine(txt::Txt, upper_period_lim::Int = 20; period_tolerance::Float64 = 0.15, pass_num::Int = 2, silent::Bool = true) ::PeriodicSubstitution
+    period = find_period(txt, upper_period_lim, period_tolerance; silent = silent)
     
     if isnothing(period)
         error("No period / period could not be found by fw_stdev (if periodicity is certain, try increasing tolerance)")
