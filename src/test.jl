@@ -6,9 +6,10 @@ include("substitution.jl")
 include("periodic_substitution.jl")
 include("cracks.jl")
 include("tuco.jl")
+include("transposition.jl")
 
 @load "jld2/samples.jld2" orwell
-const NULLTXT = Txt("")
+const NULL_TXT = Txt("")
 
 function test_cspace()
     t = orwell.raw
@@ -71,3 +72,16 @@ function test_periodic_substitution()
 
     return nothing
 end
+
+# function test_transposition()
+    tokenise!(orwell)
+
+    Columnar_test = Columnar([1,4,3,2])
+    columnar_enc = Columnar_test(orwell)
+    @test columnar_enc.tokenised == columnar_1432_orwell_tokens
+
+    invert!(Columnar_test)
+    @test Columnar_test(columnar_enc).tokenised == orwell_tokens
+
+#     return nothing
+# end

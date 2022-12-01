@@ -2,24 +2,13 @@ include("charspace.jl")
 include("cipher.jl")
 import Base.show
 
-const NULL = 0
-
-
-
-abstract type AbstractTransposition <: AbstractCipher end
-
-function invert!(T::AbstractTransposition)
-    T.inverted = !T.inverted
-    return T
-end
-
 
 
 
 
 
 # Scytale, Periodic and Columnar
-mutable struct ColumnarType <: AbstractTransposition
+mutable struct ColumnarType <: AbstractCipher
     n::Int
     permutation::Vector{Int}
     transposed::Bool
@@ -49,11 +38,11 @@ function Scytale(n::Int)
 end
 
 function Columnar(permutation::Vector{Int})
-    return ColumnarType(permutation, true)
+    return ColumnarType(permutation, true, true)
 end
 
 function Permutation(permutation::Vector{Int})
-    return ColumnarType(permutation, false)
+    return ColumnarType(permutation, false, true)
 end
 
 
@@ -88,7 +77,7 @@ function safe_reshape_2D(vector::Vector{T}, dim, null_token::Int) ::Matrix{T} wh
     return reshape(vector, (dim, :))
 end
 
-function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType, null_token::Int) ::Vector{Int}
+function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType) ::Vector{Int}
     L = length(vect)
     overhang = L % T.n
 
@@ -104,9 +93,9 @@ function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType, null_token::Int) ::
     if T.transposed
         row_length = ceil(Int, L / T.n)
 
-        for (i,j) in enumerate(reverse!(null_ends))
+        for (i,j) in enumerate(null_ends)
             if j
-                insert!(vector, (T.n + 1 - i) * row_length, null_token)
+                insert!(vector, i * row_length, NULL_TOKEN)
             end
         end
 
@@ -116,7 +105,7 @@ function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType, null_token::Int) ::
 
         for (i,j) in enumerate(null_ends)
             if j
-                insert!(vector, num_full_columns * T.n + i, null_token)
+                insert!(vector, num_full_columns * T.n + i, NULL_TOKEN)
             end
         end
 
@@ -127,7 +116,7 @@ end
 
 function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     if T.inverted # inverse application
-        new_tokens = reinsert_nulls!(vect, T, NULL)
+        new_tokens = reinsert_nulls!(vect, T)
         new_tokens = reshape(new_tokens, (:, T.n))
 
         if T.transposed
@@ -139,13 +128,13 @@ function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{
         new_tokens = vec(new_tokens[inv_permutation, :])
 
         if T.remove_nulls
-            return deleteat!(new_tokens, findall(==(NULL), new_tokens))
+            return deleteat!(new_tokens, findall(==(NULL_TOKEN), new_tokens))
         else
             return new_tokens
         end
 
     else # regular application
-        new_tokens = safe_reshape_2D(vect, T.n, NULL)
+        new_tokens = safe_reshape_2D(vect, T.n, NULL_TOKEN)
 
         if T.transposed
             new_tokens = permutedims(new_tokens[T.permutation, :])
@@ -156,7 +145,7 @@ function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{
         new_tokens = vec(new_tokens)
 
         if T.remove_nulls
-            return deleteat!(new_tokens, findall(==(NULL), new_tokens))
+            return deleteat!(new_tokens, findall(==(NULL_TOKEN), new_tokens))
         else
             return new_tokens
         end
@@ -176,7 +165,7 @@ end
 
 
 
-mutable struct Railfence <: AbstractTransposition
+mutable struct Railfence <: AbstractCipher
     n::Int
     offset::Int
 
@@ -236,7 +225,7 @@ function apply(T::Railfence, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int
         return vec(new_tokens)
 
     else
-        for i in 1:T.offset
+        for _ in 1:T.offset
             insert!(new_tokens, 1, 0)
         end
 
@@ -252,4 +241,12 @@ function apply(T::Railfence, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int
         return vec(new_tokens)
     end
 
+end
+
+
+
+
+function invert!(T::Union{ColumnarType, Railfence})
+    T.inverted = !T.inverted
+    return T
 end
