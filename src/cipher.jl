@@ -49,9 +49,10 @@ function push!(E::Encryption, C::AbstractCipher)
 end
 
 iterate(E::Encryption) = iterate(E.ciphers)
+iterate(E::Encryption, state::Int) = iterate(E.ciphers, state)
 
 (C::AbstractCipher)(D::AbstractCipher) = Encryption([C, D])
-(C::AbstractCipher)(E::Encryption) = push!(Encryption, C)
+(C::AbstractCipher)(E::Encryption) = push!(E, C)
 # TODO:
 # other way round of line 54
 # make combinbing Encryption with Cipher work with inverted Encryptions
@@ -69,6 +70,7 @@ function apply!(E::Encryption, txt::Txt) ::Txt
     end
 
     for layer in E
+        println(layer)
         txt.tokenised = apply(layer, txt.tokenised; safety_checks = txt)
     end
 
@@ -119,4 +121,9 @@ struct Retokenisation <: AbstractCipher
     end
 end
 
-apply(R::Retokenisation, v::Vector{Int}; safety_checks::Txt) = tokenise(untokenise(safety_checks, R.OldCSpace), R.NewCSpace)
+function apply(R::Retokenisation, v::Vector{Int}; safety_checks::Txt)
+    new_txt = deepcopy(safety_checks)
+    untokenise!(new_txt, R.OldCSpace)
+    tokenise!(new_txt, R.NewCSpace)
+    return new_txt.tokenised
+end

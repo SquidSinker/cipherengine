@@ -1,20 +1,40 @@
 include("substitution.jl")
 include("transposition.jl")
 
+function ReplaceCharAndShiftFunc(i::Int, rep::Pair{Int, Int})
+    i = i == rep.first ? rep.second : i
+    i = i >= rep.first ? i - 1 : i
+    return i
+end
 
-ReplaceChar(c1, c2) ::Cipher = Lambda(v::Vector{Int} -> replace(v, (c1 => c2)), identity)
+ReplaceCharAndShift(rep::Pair{Int, Int}) ::AbstractCipher = Lambda(i::Int -> ReplaceCharAndShiftFunc(i, rep), identity)
 
 
-function ADFGX(S, T) ::Encryption
+function ADFGX(S::Substitution, T::AbstractTransposition, rep::Pair = 10 => 9) ::Encryption
     if S.size != 26
         error("ADFGX ciphertree only applies to Alphabetic text (size of W must be 26)")
     end
-    x = Retokenisation(ADFGX_CSpace, Alphabet_CSpace)(S)
+    x = ReplaceCharAndShift(rep)
+    x = S(x)
+    x = Retokenisation(ADFGX_CSpace, Alphabet_CSpace)(x)
     x = T(x)
-
     return x
 end
-ADFGX(args_T) = ADFGX(Substitution(26), Columnar(args_T))
-ADFGX(args_S, args_T) = ADFGX(Substitution(args_S, 26), Columnar(args_T))
+ADFGX(permutation::Vector{Int}) = ADFGX(Substitution(26), Columnar(permutation))
+ADFGX() = ADFGX(Substitution(args_S, 26), Columnar(args_T))
 
-function Polybius() ::Encryption
+
+function Polybius(S::Substitution) ::Encryption
+    if S.size != 26
+        error("ADFGX ciphertree only applies to Alphabetic text (size of W must be 26)")
+    end
+    return 
+end
+
+using JLD2
+S = rand_substitution(26)
+T = Columnar([5,1,4,3,2], true)
+@load "jld2/samples.jld2" orwell
+e = ADFGX(S, T)
+tokenise!(orwell)
+prwell = e(orwell)
