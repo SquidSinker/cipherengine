@@ -101,11 +101,11 @@ function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType) ::Vector{Int}
 
 
     else
-        num_full_columns = L - (overhang)
+        num_full_rows = floor(Int, L / T.n)
 
         for (i,j) in enumerate(null_ends)
             if j
-                insert!(vector, num_full_columns * T.n + i, NULL_TOKEN)
+                insert!(vector, num_full_rows * T.n + i, NULL_TOKEN)
             end
         end
 
