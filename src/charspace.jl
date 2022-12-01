@@ -1,5 +1,9 @@
 import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex, Base.setindex!, Base.show, Base.lastindex
 
+
+const NULL_TOKEN = 0
+
+
 # a case-insensitive text will be converted to uppercase so use uppercase for case-insensitive CSpaces
 struct CSpace
     chars::Vector{String}
