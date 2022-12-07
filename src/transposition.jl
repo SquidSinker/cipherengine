@@ -34,7 +34,7 @@ ColumnarType(permutation::Vector{Int}, transposed::Bool, remove_nulls::Bool = fa
 
 
 function Scytale(n::Int)
-    return ColumnarType((n, :), nothing, true)
+    return ColumnarType(n, nothing, true)
 end
 
 function Columnar(permutation::Vector{Int})
@@ -77,7 +77,7 @@ function safe_reshape_2D(vector::Vector{T}, dim, null_token::Int) ::Matrix{T} wh
     return reshape(vector, (dim, :))
 end
 
-function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType) ::Vector{Int}
+function reinsert_nulls(vect::Vector{Int}, T::ColumnarType) ::Vector{Int}
     L = length(vect)
     overhang = L % T.n
 
@@ -114,21 +114,33 @@ function reinsert_nulls!(vect::Vector{Int}, T::ColumnarType) ::Vector{Int}
     return vector
 end
 
+
+
+function unshape(vect::Vector{Int}, T::ColumnarType) ::Array{Int}
+    new_tokens = reinsert_nulls(vect, T)
+
+    if T.transposed
+        new_tokens = reshape(new_tokens, (:, T.n))
+        new_tokens = permutedims(new_tokens)
+    else
+        new_tokens = reshape(new_tokens, (T.n, :))
+    end
+
+    return new_tokens
+end
+
+
+
 function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     if T.inverted # inverse application
-        new_tokens = reinsert_nulls!(vect, T)
-        new_tokens = reshape(new_tokens, (:, T.n))
-
-        if T.transposed
-            new_tokens = permutedims(new_tokens)
-        end
+        new_tokens = unshape(vect, T)
 
         inv_permutation = [findfirst(==(i), T.permutation) for i in 1:T.n]
 
         new_tokens = vec(new_tokens[inv_permutation, :])
 
         if T.remove_nulls
-            return deleteat!(new_tokens, findall(==(NULL_TOKEN), new_tokens))
+            return filter!(!=(NULL_TOKEN), new_tokens)
         else
             return new_tokens
         end
@@ -189,32 +201,41 @@ end
 
 
 
-function apply(T::Railfence, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
+function unshape(vect::Vector{Int}, T::Railfence) ::Array{Int}
     new_tokens = copy(vect)
 
+    L = length(vect) + T.offset
+    reinsert_pos = Vector{Int}()
+    num_rows = ceil(Int, L / T.n)
+    matrix_size = (T.n + 1) * num_rows
+
+    num_trailing = T.n - L % T.n + 1
+
+    append!(reinsert_pos, collect(2:2:num_rows), collect(matrix_size-num_rows+1:2:matrix_size)) # alternating zeros
+    append!(reinsert_pos, collect( 1 .+ (0:T.offset-1) * num_rows)) # offset zeros
+    if 1 & num_rows == 0
+        append!(reinsert_pos, collect( (1:num_trailing) * num_rows))
+    else
+        append!(reinsert_pos, collect( ((T.n+2-num_trailing):T.n+1) * num_rows))
+    end
+    sort!(reinsert_pos)
+
+    for i in unique(reinsert_pos)
+        insert!(new_tokens, i, 0)
+    end
+
+    new_tokens = reshape(new_tokens, (num_rows, :))
+    new_tokens = permutedims(new_tokens)
+
+    return new_tokens
+end
+
+
+function apply(T::Railfence, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
+
+
     if T.inverted
-        L = length(vect) + T.offset
-        reinsert_pos = Vector{Int}()
-        num_rows = ceil(Int, L / T.n)
-        matrix_size = (T.n + 1) * num_rows
-
-        num_trailing = T.n - L % T.n + 1
-
-        append!(reinsert_pos, collect(2:2:num_rows), collect(matrix_size-num_rows+1:2:matrix_size)) # alternating zeros
-        append!(reinsert_pos, collect( 1 .+ (0:T.offset-1) * num_rows)) # offset zeros
-        if 1 & num_rows == 0
-            append!(reinsert_pos, collect( (1:num_trailing) * num_rows))
-        else
-            append!(reinsert_pos, collect( ((T.n+2-num_trailing):T.n+1) * num_rows))
-        end
-        sort!(reinsert_pos)
-
-        for i in unique(reinsert_pos)
-            insert!(new_tokens, i, 0)
-        end
-
-        new_tokens = reshape(new_tokens, (num_rows, :))
-        new_tokens = permutedims(new_tokens)
+        new_tokens = unshape(vect, T)
         
         for i in 2:2:lastindex(new_tokens, 2)
             new_tokens[:, i] .= reverse(new_tokens[:, i])
@@ -225,6 +246,8 @@ function apply(T::Railfence, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int
         return vec(new_tokens)
 
     else
+        new_tokens = copy(vect)
+
         for _ in 1:T.offset
             insert!(new_tokens, 1, 0)
         end

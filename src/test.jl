@@ -73,7 +73,7 @@ function test_periodic_substitution()
     return nothing
 end
 
-# function test_transposition()
+function test_transposition()
     tokenise!(orwell)
 
     Columnar_test = Columnar([1,4,3,2])
@@ -83,5 +83,12 @@ end
     invert!(Columnar_test)
     @test Columnar_test(columnar_enc).tokenised == orwell_tokens
 
-#     return nothing
-# end
+    Permutation_test = Permutation([1,5,3,2,4])
+    permutation_enc = Permutation_test(orwell)
+    @test permutation_enc.tokenised == permutation_15324_orwell_tokens
+
+    invert!(Permutation_test)
+    @test Permutation_test(permutation_enc).tokenised == orwell_tokens
+
+    return nothing
+end
