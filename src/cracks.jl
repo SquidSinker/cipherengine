@@ -40,19 +40,21 @@ macro bruteforce(func_call, fitness)
     arguments = func_call.args[2:end]
     f = func_call.args[1]
 
-    blank = isequal.(arguments, :(:))
-    test_sets = Vector(undef, length(arguments))
-    for i in 1:length(arguments)
-        if blank[i]
+    L = length(arguments)
+
+    isblank = isequal.(arguments, :(:))
+    test_sets = Vector(undef, L)
+    for arg in 1:L
+        if isblank[arg]
             param_extraction_args = deepcopy(arguments)
-            param_extraction_args[i] = Colon()
+            param_extraction_args[arg] = Colon()
             try
-                test_sets[i] = eval(:(  $f($param_extraction_args...)  ))
+                test_sets[arg] = eval(:(  $f($param_extraction_args...)  ))
             catch err
                 error("This function does not have parameter listing defined for this argument")
             end
         else
-            test_sets[i] = (arguments[i],)
+            test_sets[arg] = (arguments[arg],)
         end
     end
 

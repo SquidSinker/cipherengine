@@ -190,3 +190,5 @@ function Affine(a::Int, b::Int, size::Int) ::Substitution
     return s
 end
 Affine(a::Int, b::Int, W::CSpace) ::Substitution = Affine(a, b, W.size)
+Affine(colon::Colon, b::Int, size::Int) ::Tuple = Tuple(filter!(x -> gcd(x, size) == 1, collect(1:size)))
+Affine(colon::Colon, b::Int, size::Int) ::Tuple = Tuple(1:size)

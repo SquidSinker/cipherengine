@@ -1,7 +1,7 @@
 include("charspace.jl")
 include("cipher.jl")
 import Base.show
-
+using Combinatorics
 
 
 
@@ -41,11 +41,12 @@ function Columnar(permutation::Vector{Int})
     return ColumnarType(permutation, true, true)
 end
 Columnar(n::Int) = Columnar(collect(1:n))
+Columnar(colon::Colon, n::Int) = Tuple(permutations(collect(1:n)))
 
 function Permutation(permutation::Vector{Int})
     return ColumnarType(permutation, false, true)
 end
-
+Permutation(colon::Colon, n::Int) = Tuple(permutations(collect(1:n)))
 
 function show(io::IO, T::ColumnarType)
     show(io, T.permutation)
@@ -189,6 +190,7 @@ mutable struct Railfence <: AbstractCipher
     end
 
 end
+Railfence(n::Int, colon::Colon) = Tuple(collect(1:2*(n-1))
 
 function show(io::IO, T::Railfence)
     if T.inverted
