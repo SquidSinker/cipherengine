@@ -40,6 +40,7 @@ end
 function Columnar(permutation::Vector{Int})
     return ColumnarType(permutation, true, true)
 end
+Columnar(n::Int) = Columnar(collect(1:n))
 
 function Permutation(permutation::Vector{Int})
     return ColumnarType(permutation, false, true)

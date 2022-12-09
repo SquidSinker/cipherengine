@@ -246,8 +246,55 @@ end
 
 
 
+function variance(data::Vector{T}) ::Float64 where T <: Real
+    L = length(data)
+    mean = sum(data) / L
 
+    var = sum((data .- mean) .^ 2) / L
+    return var
+end
 
+# raw Substructure Variance
+function substructure_variance(txt::Txt, n::Int, ref_frequencies::Vector{Float64} = monogram_freq)
+    L = length(txt)
+
+    txt_chunks = [txt[chunk_end - n + 1:chunk_end] for chunk_end in n:n:lastindex(txt)]
+    N = ceil(Int, L / n)
+
+    avg_variance = 0.0
+
+    for token in txt.character_space.tokens
+        f = ref_frequencies[token]
+        var = variance(appearances.(token, txt_chunks))
+
+        avg_variance += f * var
+    end
+
+    return avg_variance
+
+end
+
+# Auto wrapped function to find sigma error in substruct (hypothesis test)
+function substructure_sigma(txt::Txt, n::Int, ref_frequencies::Vector{Float64} = monogram_freq)
+    L = length(txt)
+
+    txt_chunks = [txt[chunk_end - n + 1:chunk_end] for chunk_end in n:n:lastindex(txt)]
+    N = ceil(Int, L / n)
+
+    avg_sigma_dev = 0.0
+
+    for token in txt.character_space.tokens
+        f = ref_frequencies[token]
+        actual_var = variance(appearances.(token, txt_chunks))
+        expected_var = n * f * (1-f) * (1 - 1/N)
+        sigma = expected_var / sqrt(N-1)
+
+        avg_sigma_dev += f * (actual_var - expected_var) / sigma
+    end
+
+    return avg_sigma_dev
+
+end
 
 
 
