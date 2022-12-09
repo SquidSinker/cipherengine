@@ -18,33 +18,35 @@ tokenise!(T)
 # B length is 1435, which is 5 * 7 * 41
 # Given orthodot ≈ 1, probably basic periodic substitution, no transposition, with period 5 or 7 (or both?)
 
-perms5 = Columnar.(permutations(collect(1:5)))
-perms7 = Columnar.(permutations(collect(1:7)))
+blocks = []
+for i in 1:41
+    push!(blocks, T[35i - 34 : 35i])
+end
+
+perms5 = invert.(Columnar.(permutations(collect(1:5))))
+
+dec_blocks = []
 
 max_f = nothing
-max_p = nothing
 max_T = nothing
 
-for p in perms5
-    for q in perms7
-        global max_f, max_p, max_T, U
-        U = q(p(T))
-        f = quadgramlog(U)
-        if isnothing(max_f) || f > max_f
-            max_f = f
-            max_p = p
-            max_q = q
-            max_T = deepcopy(U)
-        end
+for block in blocks
+    global max_f, max_T
+    max_f = nothing
+    max_T = nothing
 
-        U = p(q(T))
+    for p in perms5
+        U = p(block)
         f = quadgramlog(U)
         if isnothing(max_f) || f > max_f
             max_f = f
-            max_p = p
-            max_q = q
             max_T = deepcopy(U)
         end
     end
-    println(findfirst(==(p), perms5))
+    push!(dec_blocks, max_T)
+end
+
+untokenise!.(dec_blocks)
+for i in dec_blocks
+    print(i.raw)
 end
