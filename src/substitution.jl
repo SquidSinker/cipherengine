@@ -29,6 +29,7 @@ end
 
 # Alternate methods
 Substitution(vect::Vector{Int}, size::Int) ::Substitution = Substitution(vect, size, collect(1:size)) # Tokenless
+Substitution(vect::Vector{Int}) ::Substitution = Substitution(vect, length(vect)) # sizeless
 function Substitution(size::Int) ::Substitution # Identity
     v = collect(1:size)
     return Substitution(v, size, deepcopy(v))

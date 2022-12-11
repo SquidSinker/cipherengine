@@ -190,7 +190,7 @@ mutable struct Railfence <: AbstractCipher
     end
 
 end
-Railfence(n::Int, colon::Colon) = Tuple(collect(1:2*(n-1))
+Railfence(n::Int, colon::Colon) = Tuple(collect(1:2*(n-1)))
 
 function show(io::IO, T::Railfence)
     if T.inverted
@@ -271,8 +271,4 @@ end
 
 
 
-
-function invert!(T::Union{ColumnarType, Railfence})
-    T.inverted = !T.inverted
-    return T
-end
+invert!(T::Union{ColumnarType, Railfence}) = switch_invert_tag!(T)

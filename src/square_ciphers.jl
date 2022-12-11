@@ -1,40 +1,89 @@
 include("substitution.jl")
 include("transposition.jl")
 
-function ReplaceCharAndShiftFunc(i::Int, rep::Pair{Int, Int})
-    i = i == rep.first ? rep.second : i
-    i = i >= rep.first ? i - 1 : i
-    return i
+
+
+
+function issquare(int::Int) ::Bool
+    return isqrt(int) ^ 2 == int
 end
 
-ReplaceCharAndShift(rep::Pair{Int, Int}) ::AbstractCipher = Lambda(i::Int -> ReplaceCharAndShiftFunc(i, rep), identity)
+Replace(map::Pair{Int, Int}) = Lambda(x -> x == map[1] ? map[2] : x, identity)
 
 
-function ADFGX(S::Substitution, T::AbstractTransposition, rep::Pair = 10 => 9) ::Encryption
-    if S.size != 26
-        error("ADFGX ciphertree only applies to Alphabetic text (size of W must be 26)")
+
+
+
+function Square(square_key::Vector{Int}, replace::Vector{Pair{Int, Int}}; square_indices::Vector{Char})
+    if !issquare(length(square_key))
+        error("Input key must be of square integer length (omit tokens to be merged)")
     end
-    x = ReplaceCharAndShift(rep)
-    x = S(x)
-    x = Retokenisation(ADFGX_CSpace, Alphabet_CSpace)(x)
-    x = T(x)
-    return x
-end
-ADFGX(permutation::Vector{Int}) = ADFGX(Substitution(26), Columnar(permutation))
-ADFGX() = ADFGX(Substitution(args_S, 26), Columnar(args_T))
 
-
-function Polybius(S::Substitution) ::Encryption
-    if S.size != 26
-        error("ADFGX ciphertree only applies to Alphabetic text (size of W must be 26)")
+    if any([i[1] in square_key for i in replace])
+        error("Tokens in the square key cannot be merged to other tokens (replace must involve only omitted tokens)")
     end
-    return 
+
+    if length(square_indices) != isqrt(length(square_key))
+        error("Number of indices squared must match the square size")
+    end
+
+    omitted = [i[1] for i in replace]
+
+    S = Substitution([square_key ; omitted])
+    invert!(S)
+
+    square = nothing
+
+    for pair in replace
+        square = Replace(pair)(square)
+    end
+
+    square = S(square)
+
+    return square
 end
 
-using JLD2
-S = rand_substitution(26)
-T = Columnar([5,1,4,3,2], true)
-@load "jld2/samples.jld2" orwell
-e = ADFGX(S, T)
-tokenise!(orwell)
-prwell = e(orwell)
+function Polybius(square_key::Vector{Int}, replace::Pair{Int, Int}; square_indices::Vector{Char} = ['1', '2', '3', '4', '5'])
+    if length(square_key) != 25
+        error("Input key must be of length 25 (omit tokens to be merged)")
+    end
+
+    if replace[1] in square_key
+        error("Tokens in the square key cannot be merged to other tokens (replace must involve only omitted tokens)")
+    end
+
+    if length(square_indices) != 5
+        error("Polybius requires five indices exactly")
+    end
+
+    charspace = CSpace(square_indices) ^ 2
+
+    polybius = Square(square_key, [replace]; square_indices = square_indices)
+    polybius = Reassign(Alphabet_CSpace, charspace)(polybius)
+
+    return polybius
+end
+
+
+function ADFGX(square_key::Vector{Int}, replace::Pair{Int, Int}, columnar_args...; square_indices::Vector{Char} = ['A', 'D', 'F', 'G', 'X'])
+    if length(square_key) != 25
+        error("Input key must be of length 25 (omit tokens to be merged)")
+    end
+
+    if replace[1] in square_key
+        error("Tokens in the square key cannot be merged to other tokens (replace must involve only omitted tokens)")
+    end
+
+    if length(square_indices) != 5
+        error("Polybius requires five indices exactly")
+    end
+
+    charspace = CSpace(square_indices)
+
+    adfgx = Square(square_key, [replace]; square_indices = square_indices)
+    adfgx = Retokenise(charspace ^ 2, charspace)(adfgx)
+    adfgx = Columnar(columnar_args...)(adfgx)
+
+    return adfgx
+end
+
