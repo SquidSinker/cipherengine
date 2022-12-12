@@ -36,7 +36,7 @@ end
 
 
 
-macro bruteforce(func_call, fitness)
+macro bruteforce(func_call::Expr, fitness::Symbol)
     arguments = func_call.args[2:end]
     f = func_call.args[1]
 

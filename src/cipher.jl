@@ -45,7 +45,7 @@ mutable struct Encryption
     end
 end
 
-Encryption(args::AbstractCipher...) = Encryption(args)
+Encryption(args::AbstractCipher...) = Encryption(collect(args))
 
 function push!(E::Encryption, C::AbstractCipher)
     if E.inverted
