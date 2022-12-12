@@ -80,7 +80,7 @@ function ADFGX(square_key::Vector{Int}, replace::Pair{Int, Int}, columnar_args..
 
     charspace = CSpace(square_indices)
 
-    adfgx = Square(square_key, [replace]; square_indices = square_indices)
+    adfgx = Polybius(square_key, replace; square_indices = square_indices)
     adfgx = Retokenise(charspace ^ 2, charspace)(adfgx)
     adfgx = Columnar(columnar_args...)(adfgx)
 

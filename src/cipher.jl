@@ -121,7 +121,7 @@ end
 apply(L::Lambda, v::Vector{Int}; safety_checks::Txt) = L.func.(v)
 
 
-struct Retokenise <: AbstractCipher
+mutable struct Retokenise <: AbstractCipher
     OldCSpace::CSpace
     NewCSpace::CSpace
 end
@@ -131,7 +131,7 @@ function apply!(R::Retokenise, txt::Txt) ::Txt
         error("Cannot retokenise untokenised Txt")
     end
 
-    untokenise!(txt, R.OldCSpace)
+    untokenise!(txt, R.OldCSpace; restore_case = false, restore_frozen = false)
     tokenise!(txt, R.NewCSpace)
 
     return txt

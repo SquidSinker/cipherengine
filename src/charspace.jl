@@ -61,6 +61,16 @@ function untokenise(int::Int, W::CSpace) ::String
     return W.chars[int]
 end
 
+function lazy_tokenise(chars::Vector{Char}, W::CSpace) ::Vector{Int}
+    if W.n != 1
+        error("Quick tokenising only works for monogram spaces: wrap string in Txt object for full tokenisation")
+    else
+        return tokenise.(string.(chars), Ref(W))
+    end
+end
+
+lazy_tokenise(string::String, W::CSpace) ::Vector{Int} = lazy_tokenise(collect(string), W)
+
 +(W1::CSpace, W2::CSpace) ::CSpace = union(W1, W2)
 *(W1::CSpace, W2::CSpace) ::CSpace = combine(W1, W2)
 ^(W::CSpace, n::Int) ::CSpace = ngramify(W, n)
