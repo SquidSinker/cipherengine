@@ -184,6 +184,39 @@ function tokenise(txt::Txt, W::CSpace = Alphabet_CSpace) ::Tuple{Vector{Int}, Di
 end
 
 
+# function jagged_tokenise(txt::Txt, W::CSpace, blocks::Vector{Int}, null::Union{Char, String, Vector{Char}} = "X") ::Tuple{Vector{Int}, Dict{Int, String}}
+
+#     txt = deepcopy(txt)
+#     tokenise!(txt)
+#     untokenise!(txt; restore_frozen = false, restore_case = false)
+    
+#     if maximum(blocks) < W.n
+#         error("Maximum block size cannot be greater than CSpace character length")
+#     end
+
+#     tokenised = Vector{Int}()
+#     text = txt.case_sensitive ? txt.raw : uppercase(txt.raw)
+#     frozen = Dict{Int, String}()
+
+#     while length(text) > 0
+#         char_index = findfirst(startswith.(text, W.chars))
+
+#         if isnothing(char_index) # if text doesn't start with any of W.chars
+#             frozen[length(tokenised)] = get(frozen, length(tokenised), "") * text[1]
+#             i = nextind(text, 1)
+#             text = text[i:end] # shave text by 1
+#             continue
+#         end
+
+#         push!(tokenised, char_index) # add token to tokenised
+#         text = text[W.n+1:end] # shave text by n
+#     end
+
+#     return tokenised, frozen
+# end
+
+
+
 function untokenise(txt::Txt, W::Union{CSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::String
 
     if !txt.is_tokenised
