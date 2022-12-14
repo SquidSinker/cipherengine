@@ -202,19 +202,10 @@ function factorise(number::Int) ::Vector{Int}
 end
 
 
-
+include("convolution.jl")
 
 # Rolling average of data, sampled by window
-function rolling_average(data::Vector, window::Int) ::Vector{Float64}
-    shortend = length(data) - window
-    out = Vector{Float64}(undef, shortend)
-
-    for start in 1:shortend
-        out[start] = sum(data[start:start+window]) / window
-    end
-
-    return out
-end
+rolling_average(data::Vector, window::Int) ::Vector{Float64} = Conv1D_reals(data, ones(window) / window)
 
 
 function char_distribution(txt::Txt, window::Int, token::Int) ::Vector{Float64}
