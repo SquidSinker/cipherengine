@@ -264,36 +264,39 @@ function repeat_units(txt::Txt, min_size::Int = 2) ::Dict{Vector{Int}, Int}
     L = lastindex(vect)
 
     window_start = 1
-    window_end = 1 + min_size - 1
+    window_end = min_size
     last_number = 0
 
     repeats = Dict{Vector{Int}, Int}()
 
-    skip = falses(L)
+    min_start_lengths = ones(Int, L) * min_size
 
-    while window_start <= L - 2 * min_size + 1
-        if skip[window_start]
-            window_start += 1
-            window_end += 1
-            continue
-        end
+    while window_start <= L - 2 * min_size + 1 # while window still repeatable
 
         window = vect[window_start:window_end]
         repeat_pos = KMP_appearances(window, vect[window_end + 1:end])
         number = length(repeat_pos)
 
-        for i in repeat_pos
-            skip[window_end + i] = true
+        window_length = window_end - window_start + 1
+
+        for i in repeat_pos # for places with the same start
+            min_start_lengths[window_end + i] = window_length + 1 # start checking with length longer than now
         end
 
 
         if number == 0 # if no repeats still exist
-            if last_number != 0
+            if last_number != 0 # if the last one had repeats
                 repeats[window[begin:end - 1]] = last_number + 1 # take the last window
+
+                for i in 1:window_length - min_size # start following checks with longer window sizes
+                    min_start_lengths[window_start + i] = window_length - i
+                end
+    
             end
 
-            window_start += 1
-            window_end = window_start + min_size - 1
+            window_start += 1 # advance search
+            # set end so that length is minimum start
+            window_end = window_start + min_start_lengths[window_start] - 1
             last_number = 0
 
         else # if repeats still exist
