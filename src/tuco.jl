@@ -176,6 +176,8 @@ function divisors(number::Int) ::Vector{Int}
         end
     end
 
+    push!(divisors, number)
+
     return divisors
 end
 
@@ -229,6 +231,90 @@ function char_distribution(txt::Txt, window::Int, token::Int) ::Vector{Float64}
 
     return rolling_average(out, window)
 end
+
+
+function KMP_appearances(unit::Vector{T}, sequence::Vector{T}) where T
+    search_index = 1
+    ref_index = 1
+
+    target_length = length(unit)
+
+    L = lastindex(sequence)
+
+    valid_pos = Vector{Int}()
+
+    while search_index <= L # through whole text
+        if unit[ref_index] == sequence[search_index] # current ind matches
+            if ref_index == target_length # current ind is last ind
+                push!(valid_pos, search_index - ref_index + 1) # save ind
+
+                search_index += 1 # skip ahead search by unit length
+                ref_index = 1 # reset window
+
+            else # current ind is not last ind
+                ref_index += 1 # check next ind
+                search_index += 1
+            end
+        else # current ind does not match
+            search_index += 1
+            ref_index = 1
+        end
+    end
+
+    return valid_pos
+end
+
+function repeat_units(txt::Txt, min_size::Int = 2) ::Dict{Vector{Int}, Int}
+    if !txt.is_tokenised
+        error("Txt must be tokenised to find repeat units")
+    end
+
+    vect = txt.tokenised
+    L = lastindex(vect)
+
+    window_start = 1
+    window_end = 1 + min_size - 1
+    last_number = 0
+
+    repeats = Dict{Vector{Int}, Int}()
+
+    skip = falses(L)
+
+    while window_start <= L - 2 * min_size + 1
+        if skip[window_start]
+            window_start += 1
+            window_end += 1
+            continue
+        end
+
+        window = vect[window_start:window_end]
+        repeat_pos = KMP_appearances(window, vect[window_end + 1:end])
+        number = length(repeat_pos)
+
+        for i in repeat_pos
+            skip[window_end + i] = true
+        end
+
+
+        if number == 0 # if no repeats still exist
+            if last_number != 0
+                repeats[window[begin:end - 1]] = last_number + 1 # take the last window
+            end
+
+            window_start += 1
+            window_end = window_start + min_size - 1
+            last_number = 0
+
+        else # if repeats still exist
+            window_end += 1 # elongate window
+            last_number = number
+        end
+
+    end
+
+    return repeats
+end
+
 
 
 # Entropy
