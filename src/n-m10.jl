@@ -11,47 +11,84 @@ T = Txt(t)
 
 tokenise!(T, Alphabet_CSpace)
 U = deepcopy(T)
+# v = copy(U.tokenised)
+
+# max_rails = 10
+# R = []
+
+# for i in 2:max_rails
+#     for j in 0:2i-1
+#         for k in 2:max_rails
+#             for l in 0:2k-1
+#                 r = Railfence(i, j)
+#                 s = Railfence(k, l)
+#                 invert!(r)
+#                 invert!(s)
+#                 push!(R, (r, s))
+#             end
+#         end
+#     end
+# end
+
+# max_fit = -Inf
+# max_key = nothing
+
+# null_Txt = Txt("")
+
+# for (i, (r, s)) in enumerate(R)
+#     global max_fit, max_key, U, v
+#     v = apply(r, apply(s, v; safety_checks = null_Txt); safety_checks = null_Txt)
+#     filter!(!=(0), v)
+#     U.tokenised = v
+#     fit = quadgramlog(U)
+#     if fit > max_fit
+#         max_fit = fit
+#         max_key = (r, s)
+#     end
+#     i % 100 == 0 ? println(i) : 0
+# end
+
 
 v = T.tokenised
 
-h = 5
+h = 25
 w = 5
 
-chunks = [reshape(v[i-24 : i], (5,5)) for i in 25:25:length(v)]
+chunks = [reshape(v[i-(w*h-1) : i], (h,5)) for i in w*h:w*h:length(v)]
 
-function shift_chunk(chunk, shifts, perm)
+function shift_chunk(chunk, shifts)#, perm)
     out = copy(chunk)
-    for i in 1:5
+    for i in 1:w
         out[i, :] = circshift(out[i, :], shifts[i])
     end
-    return out[perm, :]
+    return out#[perm, :]
 end
         
-shift_chunks(chunks, shifts, perm) = [shift_chunk(chunk, shifts, perm) for chunk in chunks]
-death(chunks, shifts, perm) = vcat(vec.(shift_chunks(chunks, shifts, perm))...)
+shift_chunks(chunks, shifts) = [shift_chunk(chunk, shifts) for chunk in chunks]
+death(chunks, shifts) = vcat(vec.(shift_chunks(chunks, shifts))...)
 
 max_fit = -Inf
 max_key = nothing
 
-perms = collect(permutations(1:5))
+# perms = collect(permutations(1:h))
 
-for (i, p) in enumerate(perms)
-    for a in 0:4
-        for b in 0:4
-            for c in 0:4
-                for d in 0:4
-                    for e in 0:4
-                        global max_fit, max_key
-                        U.tokenised = death(chunks, [a, b, c, d, e], p)
-                        fit = quadgramlog(U)
-                        if fit > max_fit
-                            max_fit = fit
-                            max_key = (p, [a, b, c, d, e])
-                        end
+# for (i, p) in enumerate(perms)
+for a in 1:h
+    for b in 1:h
+        for c in 1:h
+            for d in 1:h
+                for e in 1:h
+                    global max_fit, max_key
+                    U.tokenised = death(chunks, [a, b, c, d, e])
+                    fit = quadgramlog(U)
+                    if fit > max_fit
+                        max_fit = fit
+                        max_key = [a, b, c, d, e]
                     end
                 end
             end
-            println(i, " ", a, " ", b)
+            println(a, " ", b, " ", c)
         end
     end
 end
+# end
