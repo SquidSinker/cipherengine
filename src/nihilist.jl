@@ -82,17 +82,3 @@ function nihilist_trans_dec(ciphertext::Vector, permrow, permcolumn, order="rows
     end
     return vec(ciphematrix)
 end
-
-include("m10.jl")
-
-using Combinatorics
-perms5 = permutations(collect(1:5))
-
-M = Scytale(10)
-invert!(M)
-
-best = optimise(x -> M(invert(x)(T)), vec([NihilistTransposition(a, b, false) for (a,b) in product(perms5, perms5)]), quadgramlog)
-
-invert!(best)
-
-println(untokenise(M(best(T))))
