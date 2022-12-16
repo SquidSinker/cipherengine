@@ -276,37 +276,54 @@ invert!(T::Union{ColumnarType, Railfence}) = switch_invert_tag!(T)
 
 
 
-struct Amsco1
+mutable struct Amsco1 <: AbstractCipher
     blocks::Vector{Int}
     permutation::Vector{Int}
     inverted::Bool
     Amsco1(blocks::Vector{Int}, permutation::Vector{Int}, inverted::Bool = false) = new(blocks, permutation, inverted)
 end
 
+invert!(A::Amsco1) = A.inverted = !A.inverted
 
 function (A::Amsco1)(v::Vector{Int}) ::Vector{Int}
     
     block_total = sum(A.blocks)
-    rows = ceil(Int, length(v) ÷ block_total)
     period = length(A.permutation)
+    rows = ceil(Int, length(v) / block_total * length(A.blocks) / period )
     mat = fill(Vector{Int}(), rows, period)
 
     u = copy(v)
     r = 1
     c = 0
-    while length(u) > 0
-        c += 1
-        if c > period
-            c = 1
-            r += 1
+
+    if !A.inverted
+        while length(u) > 0
+            c += 1
+            if c > period
+                c = 1
+                r += 1
+            end
+            i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
+            mat[r, c] = length(u) ≥ i ? u[1:i] : u[1:end]
+            u = u[i+1:end]
         end
-        i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
-        mat[r, c] = length(u) ≥ i ? u[1:i] : u[1:end]
-        u = u[i+1:end]
+        
+        mat = mat[:, A.permutation]
+        return vcat(mat...)
+    
+    else
+
+        u = copy(v)
+        for c in A.permutation
+            for r in 1:rows
+                i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
+                mat[r, c] = length(u) ≥ i ? u[1:i] : u[1:end]
+                u = u[i+1:end]
+            end
+        end
+        return vcat(permutedims(mat, (2, 1))...)
+
     end
-    println(mat)
-    mat = mat[:, A.permutation]
-    return vcat(mat...)
 
 end
 
