@@ -72,6 +72,7 @@ function invert!(E::Encryption)
     E.inverted = !E.inverted
     return E
 end
+invert(E::Encryption) = invert!(deepcopy(E))
 
 function apply!(E::Encryption, txt::Txt) ::Txt
     if !txt.is_tokenised
