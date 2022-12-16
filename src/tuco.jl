@@ -202,6 +202,50 @@ function factorise(number::Int) ::Vector{Int}
 end
 
 
+
+function blocks(txt::Txt, size::Int)
+    return [txt[i - size + 1:i] for i in size:size:lastindex(txt)]
+end
+
+function block_apply(f::Function, txt::Txt, block_size::Int)
+    data = f.(blocks(txt, block_size))
+
+    return sum(data) / length(data) , variance(data)
+end
+
+
+
+
+function rolling(f::Function, txt::Txt, window::Int) ::Vector
+    L = length(txt)
+    values = Vector(undef, L)
+    wing = round(Int, window / 2)
+
+    for i in 1:L
+        start = i - wing
+        final = i + wing
+
+        if start < 1
+            if final > L
+                error("Window too large")
+            end
+
+            start = 1
+            final = start + 2 * wing
+
+        elseif final > L
+            final = L
+            start = final - 2 * wing
+        end
+
+        values[i] = f(txt[start:final])
+    end
+
+    return values
+end
+
+
+
 include("convolution.jl")
 
 # Rolling average of data, sampled by window
