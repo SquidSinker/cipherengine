@@ -1,5 +1,6 @@
 include("charspace.jl")
 include("cipher.jl")
+include("substitution.jl")
 import Base.show
 using Combinatorics
 
@@ -46,7 +47,33 @@ Columnar(colon::Colon, n::Int) = Tuple(permutations(collect(1:n)))
 function Permutation(permutation::Vector{Int})
     return ColumnarType(permutation, false, true)
 end
+Permutation(n::Int) = Permutation(collect(1:n))
 Permutation(colon::Colon, n::Int) = Tuple(permutations(collect(1:n)))
+
+
+
+
+
+function switch(S::ColumnarType, posa::Int, posb::Int) ::ColumnarType
+    return ColumnarType(S.n, switch(S.permutation, posa, posb), S.transposed, S.remove_nulls, S.inverted)
+end
+
+function switch!(S::ColumnarType, posa::Int, posb::Int) ::ColumnarType
+    switch!(S.permutation ::Vector{Int}, posa, posb)
+    return S
+end
+
+function shift!(self::ColumnarType, shift::Int) ::ColumnarType
+    self.permutation = circshift(self.permutation, shift)
+    return self
+end
+
+function shift(self::ColumnarType, shift::Int)
+    shift!(deepcopy(self), shift)
+end
+
+
+
 
 function show(io::IO, T::ColumnarType)
     show(io, T.permutation)
