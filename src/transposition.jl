@@ -310,9 +310,22 @@ mutable struct Amsco1 <: AbstractCipher
     Amsco1(blocks::Vector{Int}, permutation::Vector{Int}, inverted::Bool = false) = new(blocks, permutation, inverted)
 end
 
-invert!(A::Amsco1) = switch_invert_tag!(A)
+mutable struct Amsco2 <: AbstractCipher
+    blocks::Vector{Int}
+    permutation::Vector{Int}
+    shift::Int
+    inverted::Bool
+    function Amsco2(blocks::Vector{Int}, permutation::Vector{Int}, shift::Int = 1, inverted::Bool = false)
+        if length(permutation) != length(blocks)
+            error("Amsco2 requires a permutation with the same period as the number of block lengths")
+        end
+        new(blocks, permutation, shift, inverted)
+    end
+end
 
-function apply(A::Amsco1, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
+invert!(A::Union{Amsco1, Amsco2}) = switch_invert_tag!(A)
+
+function apply(A::Union{Amsco1, Amsco2}, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     
     block_total = sum(A.blocks)
     period = length(A.permutation)
@@ -330,7 +343,11 @@ function apply(A::Amsco1, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
                 c = 1
                 r += 1
             end
-            i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
+            if A isa Amsco1
+                i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
+            else
+                i = A.blocks[(c - 1 + A.shift*(r-1)) % period + 1]
+            end
             mat[r, c] = length(u) ≥ i ? u[1:i] : u[1:end]
             u = u[i+1:end]
         end
@@ -343,7 +360,11 @@ function apply(A::Amsco1, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
         u = copy(v)
         for c in A.permutation
             for r in 1:rows
-                i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
+                if A isa Amsco1
+                    i = A.blocks[((r - 1) * period + c - 1) % length(A.blocks) + 1]
+                else
+                    i = A.blocks[(c - 1 + A.shift*(r-1)) % period + 1]
+                end
                 mat[r, c] = length(u) ≥ i ? u[1:i] : u[1:end]
                 u = u[i+1:end]
             end
@@ -353,4 +374,3 @@ function apply(A::Amsco1, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     end
 
 end
-
