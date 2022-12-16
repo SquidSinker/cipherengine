@@ -310,9 +310,9 @@ mutable struct Amsco1 <: AbstractCipher
     Amsco1(blocks::Vector{Int}, permutation::Vector{Int}, inverted::Bool = false) = new(blocks, permutation, inverted)
 end
 
-invert!(A::Amsco1) = A.inverted = !A.inverted
+invert!(A::Amsco1) = switch_invert_tag!(A)
 
-function (A::Amsco1)(v::Vector{Int}) ::Vector{Int}
+function apply(A::Amsco1, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     
     block_total = sum(A.blocks)
     period = length(A.permutation)
