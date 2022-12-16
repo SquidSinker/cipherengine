@@ -40,7 +40,7 @@ mutable struct Encryption
 
     inverted::Bool
 
-    function Encryption(layers::Vector{AbstractCipher})
+    function Encryption(layers::Vector{T}) where T <: AbstractCipher
         new(layers, false)
     end
 end
