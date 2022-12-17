@@ -458,6 +458,23 @@ function quadgramlog(txt::Txt) ::Float64
 end
 
 
+function bigramlog(T::Txt)
+    if T.character_space != Alphabet_CSpace
+        error("your'e txt object smells of poo")
+    end
+
+    sum = 0.
+
+    L = length(T) - 1
+    for i in 1:L
+        sum += bigram_scores[T[i], T[i+1]]
+    end
+
+    return sum / L
+
+end
+
+
 function bibigramlog_arr(txt::Txt) ::Float64
     if txt.character_space != Bigram_CSpace
         error("Bibigramlog fitness only works on Bigram_CSpace")

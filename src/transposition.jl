@@ -35,7 +35,7 @@ ColumnarType(permutation::Vector{Int}, transposed::Bool, remove_nulls::Bool = fa
 
 
 function Scytale(n::Int)
-    return ColumnarType(n, nothing, true)
+    return ColumnarType(n, nothing, true, true)
 end
 
 function Columnar(permutation::Vector{Int})
@@ -186,7 +186,7 @@ function apply(T::ColumnarType, vect::Vector{Int}; safety_checks::Txt) ::Vector{
         new_tokens = vec(new_tokens)
 
         if T.remove_nulls
-            return deleteat!(new_tokens, findall(==(NULL_TOKEN), new_tokens))
+            return filter!(!=(NULL_TOKEN), new_tokens)
         else
             return new_tokens
         end
