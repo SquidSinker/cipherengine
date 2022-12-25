@@ -5,6 +5,8 @@ TUCO handles all statistical stuff, including fitness statistics
 
 =#
 include("charspace.jl")
+using Statistics
+
 
 using JLD2
 @load "jld2/quadgram_scores.jld2" quadgram_scores_arr
@@ -103,20 +105,10 @@ end
 
 
 
-# regular standard deviation
-function stdev(data::Vector) ::Float64
-    l = length(data)
-    mu = sum(data) / l
-
-    var = sum(data .^2) / l - mu ^ 2
-
-    return sqrt(var)
-end
-
 # front weighted standard deviation: rooted avg of square difference of adjacent values, weighted by a decreasing geometric series
-function fw_stdev(data::Vector, r = 0.5) ::Float64
+function fw_var(data::Vector, r = 0.5) ::Float64
     if r == 1
-        return stdev(data)
+        return var(data)
     end
 
     weights = [r ^ i for i in 1:length(data)]
@@ -130,8 +122,9 @@ function fw_stdev(data::Vector, r = 0.5) ::Float64
 
     var = sum( (data .- mu).^2 .* weights ) / w_total
 
-    return sqrt(var)
+    return var
 end
+fw_std(data::Vector, r = 0.5) ::Float64 = sqrt(fw_var(data, r))
 
 
 
@@ -139,13 +132,13 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; 
     upper_lim = min(upper_lim, length(data) - 1)
     # test until period > upper_lim
 
-    threshold = fw_stdev(data, weight_ratio) * tolerance
+    threshold = fw_std(data, weight_ratio) * tolerance
 
     for n in 1:upper_lim
         avg_error = 0
 
         for i in 1:n
-            avg_error += fw_stdev(data[i:n:end], weight_ratio)
+            avg_error += fw_std(data[i:n:end], weight_ratio)
             # Compare n-length chunks of data to themselves, find std_dev
         end
 
@@ -153,7 +146,7 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; 
 
         if avg_error < threshold # if the periodic std_dev is below the threshold
             if !silent
-                println("ρ: ", round(avg_error / fw_stdev(data, weight_ratio); sigdigits = 3), " σ")
+                println("ρ: ", round(avg_error / fw_std(data, weight_ratio); sigdigits = 3), " σ")
             end
             return n
             break
@@ -210,7 +203,9 @@ end
 function block_apply(f::Function, txt::Txt, block_size::Int)
     data = f.(blocks(txt, block_size))
 
-    return sum(data) / length(data) , variance(data)
+    mean = mean(data)
+
+    return mean , stdm(data, mean)
 end
 
 
@@ -249,7 +244,7 @@ end
 include("convolution.jl")
 
 # Rolling average of data, sampled by window
-rolling_average(data::Vector, window::Int) ::Vector{Float64} = Conv1D_reals(data, ones(window) / window)
+rolling_average(data::Vector, window::Int) ::Vector{Float64} = real.(Conv1D_reals(data, ones(window) / window))
 
 
 function char_distribution(txt::Txt, window::Int, token::Int) ::Vector{Float64}
@@ -370,14 +365,6 @@ end
 
 
 
-function variance(data::Vector{T}) ::Float64 where T <: Real
-    L = length(data)
-    mean = sum(data) / L
-
-    var = sum((data .- mean) .^ 2) / L
-    return var
-end
-
 # raw Substructure Variance
 function substructure_variance(txt::Txt, n::Int, ref_frequencies::Vector{Float64} = monogram_freq)
     L = length(txt)
@@ -389,7 +376,7 @@ function substructure_variance(txt::Txt, n::Int, ref_frequencies::Vector{Float64
 
     for token in txt.character_space.tokens
         f = ref_frequencies[token]
-        var = variance(appearances.(token, txt_chunks))
+        var = var(appearances.(token, txt_chunks))
 
         avg_variance += f * var
     end
@@ -409,7 +396,7 @@ function substructure_sigma(txt::Txt, n::Int, ref_frequencies::Vector{Float64} =
 
     for token in txt.character_space.tokens
         f = ref_frequencies[token]
-        actual_var = variance(appearances.(token, txt_chunks))
+        actual_var = var(appearances.(token, txt_chunks))
         expected_var = n * f * (1-f) * (1 - 1/N)
         sigma = expected_var / sqrt(N-1)
 
