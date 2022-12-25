@@ -350,20 +350,6 @@ end
 
 
 
-# Entropy
-function entropy(txt::Txt)
-    if !txt.is_tokenised
-        error("Txt must be tokenised to perform statistical tests")
-    end
-
-    f = vector_frequencies(txt)
-    entropy = sum( - f .* log2.(f))
-
-    return entropy / txt.character_space.size
-end
-
-
-
 
 # raw Substructure Variance
 function substructure_variance(txt::Txt, n::Int, ref_frequencies::Vector{Float64} = monogram_freq)
