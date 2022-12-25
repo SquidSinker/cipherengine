@@ -24,6 +24,9 @@ end
 invConv1D(a::Vector{Int}, b::Vector{Int}) = round.(Int, real.(invConv1D_reals(a, b)))
 
 
+#######################################################################################
+
+
 mutable struct Convolution <: AbstractCipher
     filter::Vector{Int}
 
@@ -36,7 +39,4 @@ end
 
 apply(Q::Convolution, v::Vector{Int}; safety_checks::Txt) = Q.inverted ? invConv1D(v, Q.filter) : Conv1D(v, Q.filter)
 
-function invert!(Q::Convolution)
-    Q.inverted = !Q.inverted
-    return Q
-end
+invert!(Q::Convolution) = switch_invert_tag!(Q)

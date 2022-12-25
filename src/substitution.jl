@@ -102,7 +102,7 @@ function +(a::Substitution, b::Substitution) ::Substitution
         error("Substitutions must have the same length")
     end
 
-    Substitution([b[i] for i in a], b.character_space)
+    Substitution([b[i] for i in a])
 end
 
 -(a::Substitution, b::Substitution) ::Substitution = a + invert(b)
