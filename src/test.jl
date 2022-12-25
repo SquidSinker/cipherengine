@@ -47,7 +47,7 @@ function test_substitution()
     invert!(Affine_test)
     @test Affine_test.mapping == affine_3_5_26_mapping_inv
 
-    @test Caesar(2, 10) + Caesar(3, 10) == Caesar(5, 20)
+    @test Caesar(2, 10) + Caesar(3, 10) == Caesar(5, 10)
     @test frequency_matched_substitution(orwell).mapping == freq_match_orwell_mapping
 
     return nothing
@@ -89,6 +89,8 @@ function test_transposition()
 
     invert!(Permutation_test)
     @test Permutation_test(permutation_enc).tokenised == orwell_tokens
+
+    println("AMSCO, Railfence remain untested")
 
     return nothing
 end
