@@ -277,7 +277,7 @@ function debug_linear_reinforcement(
     else # if given, use best guesses for ppM and substitution
         P = new_PosProbMat(txt, ref_freq)
 
-        parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
+        parent_sub = frequency_matched_Substitution(txt, ref_freq) # guesses FORWARDS substitution
         invert!(parent_sub)
     end
 
@@ -347,7 +347,7 @@ function linear_reinforcement(
     else # if given, use best guesses for ppM and substitution
         P = new_PosProbMat(txt, ref_freq)
 
-        parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
+        parent_sub = frequency_matched_Substitution(txt, ref_freq) # guesses FORWARDS substitution
         invert!(parent_sub)
     end
 
@@ -414,7 +414,7 @@ end
 #     else # if given, use best guesses for ppM and substitution
 #         P = new_PosProbMat(txt, ref_freq)
 
-#         parent_sub = frequency_matched_substitution(txt, ref_freq) # guesses FORWARDS substitution
+#         parent_sub = frequency_matched_Substitution(txt, ref_freq) # guesses FORWARDS substitution
 #         invert!(parent_sub)
 #     end
 
