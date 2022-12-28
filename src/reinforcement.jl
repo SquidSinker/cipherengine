@@ -60,7 +60,7 @@ end
 
 
 
-function uniform_choice_weights(gen, fitness, n)
+function uniform_choice_weights(gen, fitness, n) ::Vector{Float64}
     return ones(n) / n
 end
 
@@ -82,7 +82,7 @@ end
 
 
 # Limiting function taking (-inf, inf) -> (-p_new, p_old), with update_delta(0) == 0
-function update_delta(delta_fitness, p_old, p_new, rate) ::Float64
+function update_delta(delta_fitness::Float64, p_old::Float64, p_new::Float64, rate::Float64) ::Float64
 
     if (p_old <= 1e-320) || (p_new <= 1e-320)
         return 0.0
@@ -126,7 +126,7 @@ end
 
 
 # restricts ppM values to [0,1]
-function tidy_PosProbMat!(PosProbMat::Matrix) ::Matrix
+function tidy_PosProbMat!(PosProbMat::Matrix{Float64}) ::Matrix{Float64}
     zeros = PosProbMat .< 0.0
     ones = PosProbMat .> 1.0
 
@@ -187,7 +187,7 @@ import StatsBase.sample, StatsBase.pweights # for sample()
 
 # Generates a batch of swaps (tokenA, tokenB, posA, posB) representing tokenA goes from posA to posB and vice versa
 # takes current substitution (to prevent identity swaps)
-function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int) ::Vector{Tuple{Int64, Int64, Int64, Int64}}
+function generate_swaps(indices::CartesianIndices{2, Tuple{Base.OneTo{Int64}, Base.OneTo{Int64}}}, S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vector, number::Int) ::Vector{Tuple{Int64, Int64, Int64, Int64}}
 
     out = Vector{Tuple{Int64, Int64, Int64, Int64}}(undef, number)
 
@@ -197,9 +197,6 @@ function generate_swaps(S::Substitution, PosProbMat::Matrix, ChoiceWeights::Vect
     for i in 1:length(S)
         Draw_Matrix[S[i], i] = 0
     end
-
-
-    indices = Tuple.(keys(Draw_Matrix)) # THIS IS CALLED EVERY TIME AND IS THE SAME EVERY TIME (static var)
 
 
     samples = sample(indices, pweights( Draw_Matrix ), number, replace = false) # Tuple(which token to swap, where to move it to)
@@ -281,6 +278,7 @@ function debug_linear_reinforcement(
         invert!(parent_sub)
     end
 
+    indices = keys(P)
 
     parent_fitness = fitness(apply(parent_sub, txt))
     fitness_log = [parent_fitness]
@@ -289,7 +287,7 @@ function debug_linear_reinforcement(
 
     anim = @animate for gen in 1:generations
         println(gen)
-        swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
+        swaps = generate_swaps(indices, parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
         delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
         # generates new swaps from ppM and calculates dF
@@ -351,13 +349,14 @@ function linear_reinforcement(
         invert!(parent_sub)
     end
 
+    indices = keys(P)
 
     parent_fitness = fitness(apply(parent_sub, txt))
 
     for gen in 1:generations
-        swaps = generate_swaps(parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
+        swaps = generate_swaps(indices, parent_sub, P, choice_weights(gen, parent_fitness, txt.character_space.size), spawns)
         new_substitutions = [switch(parent_sub, m, n) for (a, b, m, n) in swaps]
-        delta_F = fitness.(apply.(new_substitutions, Ref(txt))) .- parent_fitness
+        delta_F = [fitness(new_sub(txt)) for new_sub in new_substitutions] .- parent_fitness
         # generates new swaps from ppM and calculates dF
 
 

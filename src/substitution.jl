@@ -96,7 +96,7 @@ iterate(S::Substitution, i::Integer) = iterate(S.mapping, i)
 
 # if S: i -> j     invert(S): j -> i
 function invert!(S::Substitution) ::Substitution
-    S.mapping = [findfirst(==(i), S.mapping) for i in S.tokens]
+    S.mapping = invperm(S.mapping)
     return S
 end
 
