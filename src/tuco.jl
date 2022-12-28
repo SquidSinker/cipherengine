@@ -9,26 +9,29 @@ using Statistics
 
 
 using JLD2
-@load "jld2/quadgram_scores.jld2" quadgram_scores_arr
-@load "jld2/quadgram_scores_dict.jld2" quadgram_scores
-@load "jld2/poogramfart_scores.jld2" poogram_scores
-@load "jld2/monogram_frequencies.jld2" monogram_freq
+@load "jld2/quadgram_scores.jld2" quadgram_scores
 @load "jld2/bigram_scores.jld2" bigram_scores
+@load "jld2/poogramfart_scores.jld2" poogram_scores
+
+@load "jld2/monogram_frequencies.jld2" monogram_freq
 @load "jld2/bigram_frequencies.jld2" bigram_freq
 @load "jld2/bibigram_scores_arr.jld2" bibigram_scores_arr
 
 
-# FREQUENCY
 
-function frequencies(txt::String) ::Dict{Char, Float64}
-    W = unique(txt)
+# NORMALISATION ####################################
 
-    freq = [count(isequal(i), txt) for i in W] / length(txt)
-
-    return Dict(W .=> freq)
+function normalise!(arr::Array{T}; dims::Int) ::Array{Float64} where T <: Union{Float64, Int}
+    arr ./= sum(arr; dims = dims)
+    return arr
+end
+function normalise!(arr::Array{T}) ::Array{Float64} where T <: Union{Float64, Int}
+    arr ./= sum(arr)
+    return arr
 end
 
 
+# FREQUENCY ########################################
 
 function appearances(token::Int, txt::Txt) ::Int
     if !txt.is_tokenised
@@ -37,55 +40,40 @@ function appearances(token::Int, txt::Txt) ::Int
 
     return count(==(token), txt.tokenised)
 end
+function appearances(txt::Txt) ::Vector{Int}
+    if !txt.is_tokenised
+        error("Cannot count token appearances in untokenised Txt")
+    end
+
+    return [count(==(token), txt.tokenised) for token in txt.character_space.tokens]
+end
 
 
 
 
 function vector_frequencies(txt::Txt) ::Vector{Float64}
-    if !txt.is_tokenised
-        error("Cannot take token frequencies of untokenised Txt")
-    end
-
-    return appearances.(txt.character_space.tokens, Ref(txt)) / length(txt)
+    return appearances(txt) / length(txt)
 end
 
-function frequencies(txt::Txt) ::Dict{Int, Float64}
+function frequencies(txt::Txt) ::Dict{String, Float64}
     freq = vector_frequencies(txt)
-    return Dict(txt.character_space.tokens .=> freq)
+    return Dict(txt.character_space.chars .=> freq)
 end
 
 
 
 
 
-function to_dict(vect::Vector{T}) ::Dict{Int, T} where{T}
-    return Dict(collect(1:length(vect)) .=> vect)
-end
-
-
-function sort_by_values(d::Dict)
-    a = sort(collect(d), by = x -> x[2])
-    return getindex.(a, 1)
-end
-# Returns Vector sorting elements of Dict in increasing value order
-
-
-
-
-
+# ORDERLESS MEASURES #########################################
 
 # Index of Coincidence
 function ioc(txt::Txt) ::Float64
-    if !txt.is_tokenised
-        error("Txt must be tokenised to perform statistical tests")
-    end
-
     len = length(txt)
 
-    tallies = appearances.(txt.character_space.tokens, Ref(txt)) # n
+    tallies = appearances(txt)
     summed = sum(tallies .* (tallies .- 1)) # sum of n(n-1)
 
-    return summed / (txt.character_space.size * len * (len-1)) # n(n-1)/N(N-1) normalised
+    return summed / (len * (len-1)) # n(n-1)/N(N-1) un-normalised, doesnt account for size of W
 end
 
 
@@ -101,9 +89,23 @@ function periodic_ioc(txt::Txt, n::Int64) ::Float64
 end
 
 
+# Cosine similarity of frequencies
+function orthodot(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq; ordered = true) ::Float64
+    frequencies = vector_frequencies(txt)
+
+    if !ordered
+        frequencies = sort(frequencies)
+        ref_frequencies = sort(ref_frequencies)
+    end
+
+    magnitude = sum(frequencies .^ 2) * sum(ref_frequencies .^ 2)
+
+    return sum(frequencies .* ref_frequencies) / sqrt(magnitude)
+end
 
 
 
+# PERIOD FINDING ALOGRITHM ############################################
 
 # front weighted standard deviation: rooted avg of square difference of adjacent values, weighted by a decreasing geometric series
 function fw_var(data::Vector, r = 0.5) ::Float64
@@ -128,25 +130,25 @@ fw_std(data::Vector, r = 0.5) ::Float64 = sqrt(fw_var(data, r))
 
 
 
-function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; weight_ratio ::Float64 = 0.65, silent::Bool = false) ::Union{Nothing, Int}
+function find_period(data::Vector{Float64}, upper_lim::Int, sigma_threshold::Float64; weight_ratio ::Float64 = 0.65, silent::Bool = false) ::Union{Nothing, Int}
     upper_lim = min(upper_lim, length(data) - 1)
     # test until period > upper_lim
 
-    threshold = fw_std(data, weight_ratio) * tolerance
+    threshold = fw_std(data, weight_ratio) * sigma_threshold
 
     for n in 1:upper_lim
-        avg_error = 0
+        avg_std = 0.
 
         for i in 1:n
-            avg_error += fw_std(data[i:n:end], weight_ratio)
-            # Compare n-length chunks of data to themselves, find std_dev
+            avg_std += fw_std(data[i:n:end], weight_ratio)
+            # Compare n-length chunks of data to themselves, find std
         end
 
-        avg_error /= n
+        avg_std /= n
 
-        if avg_error < threshold # if the periodic std_dev is below the threshold
+        if avg_std < threshold # if the periodic std is below the threshold
             if !silent
-                println("ρ: ", round(avg_error / fw_std(data, weight_ratio); sigdigits = 3), " σ")
+                println("ρ: ", round(avg_std / fw_std(data, weight_ratio); sigdigits = 3), " σ")
             end
             return n
             break
@@ -155,9 +157,13 @@ function find_period(data::Vector{Float64}, upper_lim::Int, tolerance::Float64; 
 
     return nothing
 end
-find_period(txt::Txt, upper_lim::Int, tolerance::Float64; weight_ratio ::Float64 = 0.65, silent::Bool = false) = find_period(periodic_ioc.(Ref(txt), collect(1:upper_lim)), upper_lim, tolerance; weight_ratio = weight_ratio, silent = silent)
+find_period(txt::Txt, upper_lim::Int, sigma_threshold::Float64; weight_ratio ::Float64 = 0.65, silent::Bool = false) = find_period(periodic_ioc.(Ref(txt), collect(1:upper_lim)), upper_lim, sigma_threshold; weight_ratio = weight_ratio, silent = silent)
 
 
+
+
+
+# NUMERICAL ANALYSIS ################################################
 
 # Finding divisors
 function divisors(number::Int) ::Vector{Int}
@@ -195,12 +201,13 @@ function factorise(number::Int) ::Vector{Int}
 end
 
 
+# TEXT BLOCKING ANALYSIS ######################################
 
 function blocks(txt::Txt, size::Int)
     return [txt[i - size + 1:i] for i in size:size:lastindex(txt)]
 end
 
-function block_apply(f::Function, txt::Txt, block_size::Int)
+function block_apply_stats(f::Function, txt::Txt, block_size::Int)
     data = f.(blocks(txt, block_size))
 
     mean = mean(data)
@@ -240,6 +247,7 @@ function rolling(f::Function, txt::Txt, window::Int) ::Vector
 end
 
 
+# STRING ANALYSIS ###################################
 
 include("convolution.jl")
 
@@ -247,7 +255,7 @@ include("convolution.jl")
 rolling_average(data::Vector, window::Int) ::Vector{Float64} = real.(Conv1D_reals(data, ones(window) / window))
 
 
-function char_distribution(txt::Txt, window::Int, token::Int) ::Vector{Float64}
+function char_distribution(txt::Txt, token::Int, window::Int) ::Vector{Float64}
     if !txt.is_tokenised
         error("Txt must be tokenised to perform statistical tests")
     end
@@ -349,7 +357,7 @@ function repeat_units(txt::Txt, min_size::Int = 2) ::Dict{Vector{Int}, Int}
 end
 
 
-
+# CODEPENDENCE ANALYSIS ###################################
 
 # raw Substructure Variance
 function substructure_variance(txt::Txt, n::Int, ref_frequencies::Vector{Float64} = monogram_freq)
@@ -398,22 +406,8 @@ end
 
 
 
-function orthodot(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq; ordered = true) ::Float64
-    frequencies = vector_frequencies(txt)
 
-    if !ordered
-        frequencies = sort(frequencies)
-        ref_frequencies = sort(ref_frequencies)
-    end
-
-    magnitude = sum(frequencies .^ 2) * sum(ref_frequencies .^ 2)
-
-    return sum(frequencies .* ref_frequencies) / sqrt(magnitude)
-end
-
-
-
-const nullfitness = log10(0.1/4224127912)
+# FITNESS FUNCTIONS ########################################
 
 function quadgramlog(txt::Txt) ::Float64
     if txt.character_space != Alphabet_CSpace
@@ -422,9 +416,10 @@ function quadgramlog(txt::Txt) ::Float64
 
     L = length(txt) - 3
 
-    score = 0.0
+    score = 0.
+
     for i in 1:L
-        score += quadgram_scores_arr[ txt.tokenised[i:(i+3)]... ]
+        score += quadgram_scores_arr[ txt[i], txt[i+1], txt[i+2], txt[i+3] ]
     end
 
     return score / L
@@ -433,7 +428,7 @@ end
 
 function bigramlog(T::Txt)
     if T.character_space != Alphabet_CSpace
-        error("your'e txt object smells of poo")
+        error("Bigramlog fitness only works on Alphabet_CSpace")
     end
 
     sum = 0.
@@ -508,7 +503,7 @@ function generate_structure_tag(quadgram::Vector{Int}) ::Int
 end
 
 
-
+# const nullfitness = log10(0.1/4224127912)
 # eng_quadgrams = Dict()
 
 # alphabet = collect("ABCDEFGHIJKLMNOPQRSTUVWXYZ")

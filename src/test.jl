@@ -48,7 +48,7 @@ function test_substitution()
     @test Affine_test.mapping == affine_3_5_26_mapping_inv
 
     @test Caesar(2, 10) + Caesar(3, 10) == Caesar(5, 10)
-    @test frequency_matched_substitution(orwell).mapping == freq_match_orwell_mapping
+    @test frequency_matched_Substitution(orwell).mapping == freq_match_orwell_mapping
 
     return nothing
 end
