@@ -17,7 +17,7 @@ function apply!(C::AbstractCipher, txt::Txt) ::Txt
 end
 
 function apply(C::AbstractCipher, txt::Txt) ::Txt
-    new_txt = deepcopy(txt)
+    new_txt = copy(txt)
     apply!(C, new_txt)
 
     return new_txt

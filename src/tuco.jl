@@ -409,7 +409,7 @@ end
 
 # FITNESS FUNCTIONS ########################################
 
-function quadgramlog(txt::Txt) ::Float64
+function quadgramlog(txt::Txt; quadgram_scores::Array{Float64, 4} = quadgram_scores) ::Float64
     if txt.character_space != Alphabet_CSpace
         error("Quadgramlog fitness only works on Alphabet_CSpace")
     end
@@ -426,7 +426,7 @@ function quadgramlog(txt::Txt) ::Float64
 end
 
 
-function bigramlog(T::Txt)
+function bigramlog(T::Txt; bigram_scores::Array{Float64, 2} = bigram_scores)
     if T.character_space != Alphabet_CSpace
         error("Bigramlog fitness only works on Alphabet_CSpace")
     end
@@ -443,7 +443,7 @@ function bigramlog(T::Txt)
 end
 
 
-function bibigramlog_arr(txt::Txt) ::Float64
+function bibigramlog_arr(txt::Txt; bibigram_scores::Array{Float64, 2} = bibigram_scores_arr) ::Float64
     if txt.character_space != Bigram_CSpace
         error("Bibigramlog fitness only works on Bigram_CSpace")
     end
@@ -452,7 +452,7 @@ function bibigramlog_arr(txt::Txt) ::Float64
 
     score = 0.0
     for i in 1:L
-        score += bibigram_scores_arr[ txt.tokenised[i], txt.tokenised[i + 1] ]
+        score += bibigram_scores[ txt.tokenised[i], txt.tokenised[i + 1] ]
     end
 
     return score / L
@@ -470,7 +470,7 @@ end
 
 
 # 93% improvement
-function poogramfart(txt::Txt) ::Float64
+function poogramfart(txt::Txt; poogram_scores::Dict{Int, Float64} = poogram_scores) ::Float64
     if txt.character_space != Alphabet_CSpace
         error("Poogramfart fitness only works on Alphabet_CSpace")
     end

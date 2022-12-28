@@ -1,4 +1,4 @@
-import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex, Base.setindex!, Base.show, Base.lastindex
+import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex, Base.setindex!, Base.show, Base.lastindex, Base.copy
 
 
 const NULL_TOKEN = 0
@@ -92,9 +92,9 @@ mutable struct Txt
     tokenised::Union{Nothing, Vector{Int}}
     frozen::Union{Nothing, Dict{Int, String}}
     is_tokenised::Bool
-
-    Txt(text, case_sensitive = false) = new(text, case_sensitive, isuppercase.(collect(text)), nothing, nothing, nothing, false)
+    
 end
+Txt(text, case_sensitive = false) = Txt(text, case_sensitive, isuppercase.(collect(text)), nothing, nothing, nothing, false)
 
 length(txt::Txt) ::Int = txt.is_tokenised ? length(txt.tokenised) : error("Txt has not been tokenised")
 
@@ -128,7 +128,7 @@ function getindex(txt::Txt, args) ::Union{Int, Txt}
         return txt.tokenised[args]
     end 
     
-    t = deepcopy(txt)
+    t = copy(txt)
     t.tokenised = getindex(t.tokenised, args)
 
     return t
@@ -136,6 +136,8 @@ end
 
 setindex!(txt::Txt, X, i::Int) = txt.is_tokenised ? txt.tokenised[i] = X : error("Cannot set index of untokenised Txt")
 lastindex(txt::Txt) = lastindex(txt.tokenised)
+
+copy(txt::Txt) = Txt(txt.raw, txt.case_sensitive, txt.cases, txt.character_space, copy(txt.tokenised), txt.frozen, txt.is_tokenised)
 
 function show(io::IO, txt::Txt)
     if txt.is_tokenised
