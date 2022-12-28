@@ -419,7 +419,7 @@ function quadgramlog(txt::Txt) ::Float64
     score = 0.
 
     for i in 1:L
-        score += quadgram_scores_arr[ txt[i], txt[i+1], txt[i+2], txt[i+3] ]
+        score += quadgram_scores[ txt[i], txt[i+1], txt[i+2], txt[i+3] ]
     end
 
     return score / L
