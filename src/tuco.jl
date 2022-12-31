@@ -21,12 +21,12 @@ using JLD2
 
 # NORMALISATION ####################################
 
-function normalise!(arr::Array{T}; dims::Int) ::Array{Float64} where T <: Union{Float64, Int}
+function normalise!(arr::Array{Float64}; dims::Int) ::Array{Float64}
     arr ./= sum(arr; dims = dims)
     return arr
 end
-function normalise!(arr::Array{T}) ::Array{Float64} where T <: Union{Float64, Int}
-    arr ./= sum(arr)
+function normalise!(arr::Array{Float64}) ::Array{Float64}
+    arr /= sum(arr)
     return arr
 end
 
