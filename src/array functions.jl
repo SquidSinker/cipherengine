@@ -18,3 +18,14 @@ function safe_reshape_2D(vector::Vector{T}, dim::Int, null_token::Int) ::Matrix{
 
     return reshape(vector, (dim, :))
 end
+
+
+
+function checkperm(vector::Vector{Int}) ::Vector{Int}
+    if !isperm(permutation)
+        e = ArgumentError("Not a permutation")
+        throw(e)
+    end
+
+    return vector
+end
