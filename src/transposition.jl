@@ -1,6 +1,6 @@
 include("charspace.jl")
 include("cipher.jl")
-include("substitution.jl")
+include("array functions.jl")
 import Base.show
 using Combinatorics
 
@@ -88,22 +88,6 @@ function show(io::IO, ::MIME"text/plain", T::ColumnarType)
 
     println(io, "$(T.n)-column ", inverse_text, "ColumnarType Transposition (transpose = $(T.transposed)):")
     show(io, T.permutation)
-end
-
-
-function safe_reshape_2D(vector::Vector{T}, dim, null_token::Int) ::Matrix{T} where T
-    r = length(vector) % dim
-
-    if r != 0
-        pad_number = dim - length(vector) % dim
-
-        vector = deepcopy(vector)
-        for i in 1:pad_number
-            push!(vector, null_token)
-        end
-    end
-
-    return reshape(vector, (dim, :))
 end
 
 function reinsert_nulls(vect::Vector{Int}, T::ColumnarType) ::Vector{Int}

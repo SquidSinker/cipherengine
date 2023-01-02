@@ -2,7 +2,7 @@ import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex, Base.iter
 import Random.shuffle!
 include("charspace.jl")
 include("cipher.jl")
-
+include("array functions.jl")
 #=
 
 The Substitution object holds a Vector, where the ith entry is the token that Substitutes i in the cipher
@@ -130,15 +130,6 @@ function shift!(self::Substitution, shift::Int) ::Substitution
     self.mapping = circshift(self.mapping, shift)
     return self
 end
-
-
-# Switches two entries at posa posb in any Vector
-function switch!(self::AbstractVector, posa::Int, posb::Int) ::AbstractVector
-    self[posa], self[posb] = self[posb], self[posa]
-    return self
-end
-
-switch(v::Vector{Int}, posa::Int, posb::Int) ::Vector{Int} = switch!(copy(v), posa, posb)
 
 
 # Switches two entries in a Substitution
