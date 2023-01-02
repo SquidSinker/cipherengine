@@ -19,7 +19,7 @@ mutable struct Substitution <: AbstractCipher
     # DO NOT USE
     function Substitution(vect::Vector{Int}, size::Int, tokens::Vector{Int}, check_vect::Bool = true) # UNSAFE
         if check_vect
-            if tokens != sort(vect)
+            if !isperm(vect)
                 error("Substitutions must contain a permutation of all tokens")
             end
         end
