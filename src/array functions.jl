@@ -22,7 +22,7 @@ end
 
 
 function checkperm(vector::Vector{Int}) ::Vector{Int}
-    if !isperm(permutation)
+    if !isperm(vector)
         e = ArgumentError("Not a permutation")
         throw(e)
     end
