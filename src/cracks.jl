@@ -4,7 +4,7 @@ include("genetics.jl")
 
 import IterTools.product
 
-############# ALL on ALPHABETIC CSPACE (to English)
+############# ALL on ALPHABETIC CharSpace (to English)
 
 # Returns element of input Vector that maximises x -> fitness(f(x))
 function optimise(f::Function, inputs::AbstractVector, fitness::Function)

@@ -11,7 +11,7 @@ include("transposition.jl")
 @load "jld2/samples.jld2" orwell
 const NULL_TXT = Txt("")
 
-function test_cspace()
+function test_charspace()
     t = orwell.raw
     T = Txt(t)
     @test tokenise!(T).tokenised == orwell_tokens
@@ -31,7 +31,7 @@ function test_substitution()
     Caesar_test = Caesar(2, 26)
     @test Caesar_test.mapping == caesar_2_26_mapping
 
-    Affine_test = Affine(3, 5, Alphabet_CSpace)
+    Affine_test = Affine(3, 5, Alphabet)
     @test Affine_test.mapping == affine_3_5_26_mapping
 
     tokenise!(orwell)
@@ -56,7 +56,7 @@ end
 function test_periodic_substitution()
     tokenise!(orwell)
 
-    Vigenere_test = Vigenere("ABBA", Alphabet_CSpace)
+    Vigenere_test = Vigenere("ABBA", Alphabet)
     @test [i.mapping for i in Vigenere_test] == vigenere_ABBA_mappings
 
     Periodic_Affine_test = Periodic_Affine([1,3,5], [7,6,5], 26)

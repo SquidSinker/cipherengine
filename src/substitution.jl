@@ -18,7 +18,10 @@ mutable struct Substitution <: AbstractCipher
 
     # DO NOT USE
     function Substitution(vect::Vector{Int}, size::Int, tokens::Vector{Int}, check_vect::Bool = true) # UNSAFE
-        new(checkperm(vect), size, tokens)
+        if check_vect
+            checkperm(vect)
+        end
+        return new(vect, size, tokens)
     end
     # DO NOT USE
 
@@ -28,7 +31,7 @@ end
 
 # Unsafe outer constructors
 unsafe_Substitution(vect::Vector{Int}, size::Int) ::Substitution = Substitution(vect, size, collect(1:size)) # Tokenless UNSAFE
-unsafe_Substitution(vect::Vector{Int}, W::CSpace) ::Substitution = Substitution(vect, W.size, W.tokens) # UNSAFE
+unsafe_Substitution(vect::Vector{Int}, W::NCharSpace{N} where N) ::Substitution = Substitution(vect, W.size, W.tokens) # UNSAFE
 
 
 # Safe outer constructors
@@ -37,14 +40,14 @@ function Substitution(size::Int) ::Substitution # Identity
     v = collect(1:size)
     return Substitution(v, size, copy(v), false)
 end
-function Substitution(chars::Vector{String}, W::CSpace) ::Substitution # Construct Substitution from permutation of chars
-    if !issetequal(chars, W.chars)
+function Substitution(chars::Vector{String}, W::NCharSpace{1}) ::Substitution # Construct Substitution from permutation of chars
+    if !issetequal(chars, W.charsmap)
         error("Substitutions must contain all tokenised characters only once")
     end
 
-    return Substitution([findfirst(==(i), W.chars) for i in chars], W.size, W.tokens, false)
+    return Substitution([W.tokenmap[i] for i in chars], W.size, W.tokens, false)
 end
-Substitution(W::CSpace) ::Substitution = Substitution(W.size)
+Substitution(W::NCharSpace{N} where N) ::Substitution = Substitution(W.size)
 
 
 
@@ -52,15 +55,15 @@ Substitution(W::CSpace) ::Substitution = Substitution(W.size)
 
 # Finds forwards substitution matching tokens sorted by frequency
 function frequency_matched_Substitution(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq)
-    if length(ref_frequencies) != txt.character_space.size
-        error("Reference frequencies must be provided for each token (length equal to CSpace size)")
+    if length(ref_frequencies) != txt.charspace.size
+        error("Reference frequencies must be provided for each token (length equal to CharSpace size)")
     end
 
     f = sortperm(vector_frequencies(txt)) # ranking of empirical frequencies in ascending order
 
     ref_frequencies = sortperm(ref_frequencies) # ranking of expected frequencies in ascending order
 
-    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in txt.character_space.tokens], txt.character_space.size, txt.character_space.tokens, false) # starts with letters arranged by frequencies against ref_frequencies
+    return Substitution([f[findfirst(==(i), ref_frequencies)] for i in txt.charspace.tokens], txt.charspace.size, txt.charspace.tokens, false) # starts with letters arranged by frequencies against ref_frequencies
 end
 
 
@@ -109,7 +112,7 @@ end
 
 # Applies Substitution to Integer Vectors
 function apply(S::Substitution, vect::Vector{Int}; safety_checks::Txt) ::Vector{Int}
-    if safety_checks.character_space.size != S.size
+    if safety_checks.charspace.size != S.size
         println("WARNING: Substitution size does not match size of Character Space")
     end
 
@@ -156,7 +159,7 @@ function Atbash(size::Int) ::Substitution
 
     return s
 end
-Atbash(W::CSpace) ::Substitution = Atbash(W.size)
+Atbash(W::NCharSpace{N} where N) ::Substitution = Atbash(W.size)
 
 function Caesar(shift::Int, size::Int) ::Substitution
     s = Substitution(size)
@@ -164,7 +167,7 @@ function Caesar(shift::Int, size::Int) ::Substitution
 
     return s
 end
-Caesar(shift::Int, W::CSpace) ::Substitution = Caesar(shift::Int, W.size)
+Caesar(shift::Int, W::NCharSpace{N} where N) ::Substitution = Caesar(shift::Int, W.size)
 Caesar(colon::Colon, size::Int) ::Tuple = Tuple(1:size)
 
 function Affine(a::Int, b::Int, size::Int) ::Substitution
@@ -180,6 +183,6 @@ function Affine(a::Int, b::Int, size::Int) ::Substitution
 
     return s
 end
-Affine(a::Int, b::Int, W::CSpace) ::Substitution = Affine(a, b, W.size)
+Affine(a::Int, b::Int, W::NCharSpace{N} where N) ::Substitution = Affine(a, b, W.size)
 Affine(colon::Colon, b::Int, size::Int) ::Tuple = Tuple(filter!(x -> gcd(x, size) == 1, collect(1:size)))
 Affine(a::Int, colon::Colon, size::Int) ::Tuple = Tuple(1:size)

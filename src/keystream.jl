@@ -20,9 +20,9 @@ mutable struct Keystream <: AbstractCipher
 end
 Keystream(txt::Txt, continuation_mode::String = "blank") ::Keystream = txt.is_tokenised ? Keystream(txt.tokenised, continuation_mode) : error("Txt must be tokenised to create Keystream")
 
-Keystream(vect::Vector{String}, W::CSpace, continuation_mode::String = "blank") ::Keystream = Keystream(tokenise.(vect, Ref(W)) .- 1, continuation_mode) # Subtracting one to standardise for 0-based indexing
-Keystream(vect::Vector{Char}, W::CSpace, continuation_mode::String = "blank") ::Keystream = Keystream(string.(vect), W, continuation_mode)
-Keystream(string::String, W::CSpace, continuation_mode::String = "blank") ::Keystream = W.n == 1 ? Keystream(collect(string), W, continuation_mode) : error("Character Space must be 1-gram for String argument to be tokenised")
+Keystream(vect::Vector{String}, W::NCharSpace{1}, continuation_mode::String = "blank") ::Keystream = Keystream(tokenise.(vect, Ref(W)) .- 1, continuation_mode) # Subtracting one to standardise for 0-based indexing
+Keystream(vect::Vector{Char}, W::NCharSpace{1}, continuation_mode::String = "blank") ::Keystream = Keystream(string.(vect), W, continuation_mode)
+Keystream(string::String, W::NCharSpace{1}, continuation_mode::String = "blank") ::Keystream = W.n == 1 ? Keystream(collect(string), W, continuation_mode) : error("Character Space must be 1-gram for String argument to be tokenised")
 
 
 
@@ -121,7 +121,7 @@ function apply(K::Keystream, v::Vector{Int}; safety_checks::Txt) ::Vector{Int}
     end
 
     new_v .-= 1
-    new_v = mod.(new_v, safety_checks.character_space.size)
+    new_v = mod.(new_v, safety_checks.charspace.size)
     new_v .+= 1
 
     return new_v

@@ -13,11 +13,11 @@ using JLD2
 
 
 txt = orwell
-tokenise!(txt, Alphabet_CSpace)
+tokenise!(txt, Alphabet)
 # Prepare sample text
 
 
-# target_S = Substitution("NSVZHEFGAWXYUBKOTPQCRLMIJD", Alphabet_CSpace)
+# target_S = Substitution("NSVZHEFGAWXYUBKOTPQCRLMIJD", Alphabet)
 # apply!(target_S, txt)
 # # Apply Substitution
 

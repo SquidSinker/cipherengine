@@ -56,10 +56,10 @@ function Polybius(square_key::Vector{Int}, replace::Pair{Int, Int}; square_indic
         error("Polybius requires five indices exactly")
     end
 
-    charspace = CSpace(square_indices) ^ 2
+    charspace = CharSpace(square_indices) ^ 2
 
     polybius = Square(square_key, [replace]; square_indices = square_indices)
-    polybius = Reassign(Alphabet_CSpace, charspace)(polybius)
+    polybius = Reassign(Alphabet, charspace)(polybius)
 
     return polybius
 end
@@ -78,7 +78,7 @@ function ADFGX(square_key::Vector{Int}, replace::Pair{Int, Int}, columnar_args..
         error("Polybius requires five indices exactly")
     end
 
-    charspace = CSpace(square_indices)
+    charspace = CharSpace(square_indices)
 
     adfgx = Polybius(square_key, replace; square_indices = square_indices)
     adfgx = Retokenise(charspace ^ 2, charspace)(adfgx)

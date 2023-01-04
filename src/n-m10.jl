@@ -9,7 +9,7 @@ t = "IHRHG FTVEE EENNP OAIAO LARAE IEETI NNBKL SPREE ETNRM RAHSE NEUNI IUMND DTA
 t = replace(t, ' ' => "")
 T = Txt(t)
 
-tokenise!(T, Alphabet_CSpace)
+tokenise!(T, Alphabet)
 U = deepcopy(T)
 # v = copy(U.tokenised)
 

@@ -88,17 +88,17 @@ end
 
 
 # Presets
-function Vigenere(vect::Vector{Int}, size::Union{Int, CSpace}) ::PeriodicSubstitution
+function Vigenere(vect::Vector{Int}, size::Union{Int, NCharSpace{N}} where N) ::PeriodicSubstitution
     return PeriodicSubstitution([Caesar(i, size) for i in vect])
 end
-Vigenere(num::Int, size::Union{Int, CSpace}) = Vigenere(zeros(Int, num), size)
-Vigenere(vect::Vector{String}, W::CSpace) ::PeriodicSubstitution = Vigenere(tokenise.(vect, Ref(W)) .- 1, W) # Subtracting one to standardise for 0-based indexing
-Vigenere(vect::Vector{Char}, W::CSpace) ::PeriodicSubstitution = Vigenere(string.(vect), W)
-Vigenere(string::String, W::CSpace) ::PeriodicSubstitution = W.n == 1 ? Vigenere(collect(string), W) : error("Character Space must be 1-gram for String argument to be tokenised")
+Vigenere(num::Int, size::Union{Int, NCharSpace{N}} where N) = Vigenere(zeros(Int, num), size)
+Vigenere(vect::Vector{String}, W::NCharSpace{1}) ::PeriodicSubstitution = Vigenere(tokenise.(vect, Ref(W)) .- 1, W) # Subtracting one to standardise for 0-based indexing
+Vigenere(vect::Vector{Char}, W::NCharSpace{1}) ::PeriodicSubstitution = Vigenere(string.(vect), W)
+Vigenere(string::String, W::NCharSpace{1}) ::PeriodicSubstitution = Vigenere(collect(string), W)
 
 
-function Periodic_Affine(vect::Vector{Tuple{Int, Int}}, size::Union{Int, CSpace}) ::PeriodicSubstitution
+function Periodic_Affine(vect::Vector{Tuple{Int, Int}}, size::Union{Int, NCharSpace{N}} where N) ::PeriodicSubstitution
     return PeriodicSubstitution([Affine(a, b, size) for (a, b) in vect])
 end
-Periodic_Affine(vecta::Vector{Int}, vectb::Vector{Int}, size::Union{Int, CSpace}) ::PeriodicSubstitution = length(vecta) == length(vectb) ? Periodic_Affine(collect(zip(vecta, vectb)), size) : error("Parameter vectors must have same length")
-Periodic_Affine(num::Int, size::Union{Int, CSpace}) = Periodic_Affine(ones(Int, num), zeros(Int, num), size)
+Periodic_Affine(vecta::Vector{Int}, vectb::Vector{Int}, size::Union{Int, NCharSpace{N}} where N) ::PeriodicSubstitution = length(vecta) == length(vectb) ? Periodic_Affine(collect(zip(vecta, vectb)), size) : error("Parameter vectors must have same length")
+Periodic_Affine(num::Int, size::Union{Int, NCharSpace{N}} where N) = Periodic_Affine(ones(Int, num), zeros(Int, num), size)

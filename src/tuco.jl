@@ -19,17 +19,6 @@ using JLD2
 
 
 
-# NORMALISATION ####################################
-
-function normalise!(arr::Array{Float64}; dims::Int) ::Array{Float64}
-    arr ./= sum(arr; dims = dims)
-    return arr
-end
-function normalise!(arr::Array{Float64}) ::Array{Float64}
-    arr /= sum(arr)
-    return arr
-end
-
 
 # FREQUENCY ########################################
 
@@ -45,7 +34,7 @@ function appearances(txt::Txt) ::Vector{Int}
         error("Cannot count token appearances in untokenised Txt")
     end
 
-    return [count(==(token), txt.tokenised) for token in txt.character_space.tokens]
+    return [count(==(token), txt.tokenised) for token in txt.charspace.tokens]
 end
 
 
@@ -57,7 +46,7 @@ end
 
 function frequencies(txt::Txt) ::Dict{String, Float64}
     freq = vector_frequencies(txt)
-    return Dict(txt.character_space.chars .=> freq)
+    return Dict(txt.charspace.chars .=> freq)
 end
 
 
@@ -368,7 +357,7 @@ function substructure_variance(txt::Txt, n::Int, ref_frequencies::Vector{Float64
 
     avg_variance = 0.0
 
-    for token in txt.character_space.tokens
+    for token in txt.charspace.tokens
         f = ref_frequencies[token]
         var = var(appearances.(token, txt_chunks))
 
@@ -388,7 +377,7 @@ function substructure_sigma(txt::Txt, n::Int, ref_frequencies::Vector{Float64} =
 
     avg_sigma_dev = 0.0
 
-    for token in txt.character_space.tokens
+    for token in txt.charspace.tokens
         f = ref_frequencies[token]
         actual_var = var(appearances.(token, txt_chunks))
         expected_var = n * f * (1-f) * (1 - 1/N)
@@ -410,8 +399,8 @@ end
 # FITNESS FUNCTIONS ########################################
 
 function quadgramlog(txt::Txt; quadgram_scores::Array{Float64, 4} = quadgram_scores) ::Float64
-    if txt.character_space != Alphabet_CSpace
-        error("Quadgramlog fitness only works on Alphabet_CSpace")
+    if txt.charspace != Alphabet
+        error("Quadgramlog fitness only works on Alphabet")
     end
 
     L = length(txt) - 3
@@ -427,8 +416,8 @@ end
 
 
 function bigramlog(T::Txt; bigram_scores::Array{Float64, 2} = bigram_scores)
-    if T.character_space != Alphabet_CSpace
-        error("Bigramlog fitness only works on Alphabet_CSpace")
+    if T.charspace != Alphabet
+        error("Bigramlog fitness only works on Alphabet")
     end
 
     sum = 0.
@@ -444,8 +433,8 @@ end
 
 
 function bibigramlog_arr(txt::Txt; bibigram_scores::Array{Float64, 2} = bibigram_scores_arr) ::Float64
-    if txt.character_space != Bigram_CSpace
-        error("Bibigramlog fitness only works on Bigram_CSpace")
+    if txt.charspace != Bigram_CharSpace
+        error("Bibigramlog fitness only works on Bigram_CharSpace")
     end
 
     L = length(txt) - 1
@@ -471,8 +460,8 @@ end
 
 # 93% improvement
 function poogramfart(txt::Txt; poogram_scores::Dict{Int, Float64} = poogram_scores) ::Float64
-    if txt.character_space != Alphabet_CSpace
-        error("Poogramfart fitness only works on Alphabet_CSpace")
+    if txt.charspace != Alphabet
+        error("Poogramfart fitness only works on Alphabet")
     end
 
     L = length(txt) - 3

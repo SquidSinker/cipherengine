@@ -123,8 +123,8 @@ apply(L::Lambda, v::Vector{Int}; safety_checks::Txt) = L.func.(v)
 
 
 mutable struct Retokenise <: AbstractCipher
-    OldCSpace::CSpace
-    NewCSpace::CSpace
+    OldCharSpace::NCharSpace{1}
+    NewCharSpace::NCharSpace{1}
 end
 
 function apply!(R::Retokenise, txt::Txt) ::Txt
@@ -132,8 +132,8 @@ function apply!(R::Retokenise, txt::Txt) ::Txt
         error("Cannot retokenise untokenised Txt")
     end
 
-    untokenise!(txt, R.OldCSpace; restore_case = false, restore_frozen = false)
-    tokenise!(txt, R.NewCSpace)
+    untokenise!(txt, R.OldCharSpace; restore_case = false, restore_frozen = false)
+    tokenise!(txt, R.NewCharSpace)
 
     return txt
 end
@@ -141,12 +141,12 @@ end
 
 
 mutable struct Reassign <: AbstractCipher
-    OldCSpace::CSpace
-    NewCSpace::CSpace
+    OldCharSpace::NCharSpace{1}
+    NewCharSpace::NCharSpace{1}
 end
 
 function invert!(R::Union{Reassign, Retokenise})
-    R.OldCSpace, R.NewCSpace = R.NewCSpace, R.OldCSpace
+    R.OldCharSpace, R.NewCharSpace = R.NewCharSpace, R.OldCharSpace
     return R
 end
 
@@ -156,11 +156,11 @@ function apply!(C::Reassign, txt::Txt) ::Txt
         error("Cannot apply Cipher to untokenised Txt")
     end
 
-    if txt.character_space != C.OldCSpace
+    if txt.charspace != C.OldCharSpace
         error("Txt character space does not match Reassign input")
     end
 
-    txt.character_space = C.NewCSpace
+    txt.charspace = C.NewCharSpace
 
     return txt
 end

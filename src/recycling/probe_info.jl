@@ -11,13 +11,13 @@ using JLD2
 
 
 txt = orwell
-tokenise!(txt, Alphabet_CSpace)
+tokenise!(txt, Alphabet)
 ref = quadgramlog(orwell)
 
 
 
-S = Substitution("EFGWXZDHIJANOUYVBKLMTPQCRS", Alphabet_CSpace)
-#S = Substitution(Alphabet_CSpace)
+S = Substitution("EFGWXZDHIJANOUYVBKLMTPQCRS", Alphabet)
+#S = Substitution(Alphabet)
 apply!(S, txt)
 
 println(invert(S))
