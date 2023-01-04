@@ -64,7 +64,7 @@ struct NCharSpace{N}
             throw(e)
         end
 
-        new{N}(charmap, tokenmap, units, unit_length, Nchar_index_handler{N, size}(), size, tokens)
+        new{N}(charmap, tokenmap, units, unit_length, Nchar_index_handler{N, length(units)}(), size, tokens)
     end
     # DO NOT USE UNSAFE
 
