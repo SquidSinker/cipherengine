@@ -2,6 +2,49 @@ import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex
 
 const NULL_TOKEN = 0
 
+#####################################################################
+
+struct Nchar_index_handler{N, L}
+    size::Int
+    
+    function Nchar_index_handler{N, L}() where {N, L}
+        new(L ^ N)
+    end
+end
+
+function getindex(handl::Nchar_index_handler{N, L}, i::Int) ::Vector{Int} where {N, L}
+    if !(1 <= i <= handl.size)
+        e = ErrorException("Tried to access $(handl.size)-element Nchar_index_handler at index [$(i)]")
+        throw(e)
+    end
+    i -= 1
+
+    out = Vector{Int}(undef, N)
+    for ex in N-1:-1:0
+        coeff = L ^ ex
+        out[ex + 1] = div(i, coeff) + 1
+        i %= coeff
+    end
+
+    return out
+end
+
+function getindex(handl::Nchar_index_handler{N, L}, indices::Vararg{Number, N}) ::Int where {N, L}
+    i = 1
+    for (j, k) in enumerate(indices)
+        if !(1 <= k <= L)
+            e = ErrorException("Tried to access $(L)-element Nchar_index_handler at index [$(k)]")
+            throw(e)
+        end
+
+        i += (k - 1) * L ^ (j - 1)
+    end
+
+    return i
+end
+
+#####################################################################
+
 struct NCharSpace{N}
     charmap::Vector{String}
     tokenmap::Dict{String, Int}
@@ -9,20 +52,19 @@ struct NCharSpace{N}
     units::Vector{String}
     unit_length::Int
 
-    reducemap::Dict{Int, NTuple{N, Int}}
-    nmap::Array{Int, N}
+    reducemap::Nchar_index_handler
 
     size::Int
     tokens::Vector{Int}
 
     # DO NOT USE UNSAFE
-    function NCharSpace{N}(charmap::Vector{String}, tokenmap::Dict{String, Int}, units::Vector{String}, unit_length::Int, reducemap::Dict{Int, NTuple{N, Int}}, nmap::Array{Int, N}, size::Int, tokens::Vector{Int}) where N
+    function NCharSpace{N}(charmap::Vector{String}, tokenmap::Dict{String, Int}, units::Vector{String}, unit_length::Int, size::Int, tokens::Vector{Int}) where N
         if !((N isa Int) && (N > 0))
             e = DomainError("Parameter must be an Natural number")
             throw(e)
         end
 
-        new{N}(charmap, tokenmap, units, unit_length, reducemap, nmap, size, tokens)
+        new{N}(charmap, tokenmap, units, unit_length, Nchar_index_handler{N, size}(), size, tokens)
     end
     # DO NOT USE UNSAFE
 
@@ -46,34 +88,23 @@ function CharSpace(chars::Vector{String}) ::NCharSpace{1}
     end
 
     units = copy(uchars)
-    reducemap = Dict{Int, NTuple{1, Int}}()
-    for i in 1:size
-        reducemap[i] = (i,)
-    end
 
-    nmap = collect(1:size)
-
-    NCharSpace{1}(uchars, tokenmap, units, first_size, reducemap, nmap, size, collect(1:size))
+    NCharSpace{1}(uchars, tokenmap, units, first_size, size, collect(1:size))
 end
 
 function ^(W::NCharSpace{1}, n::Int) ::NCharSpace{n}
     size = W.size ^ n
 
     charmap = Vector{String}(undef, size)
-    reducemap = Dict{Int, NTuple{n, Int}}()
-    nmap = Array{Int, n}(undef, ntuple(x -> W.size, n))
     tokenmap = Dict{String, Int}()
     for (i, c) in enumerate(Iterators.product(ntuple(i -> W.charmap, n)...))
         string = join(c)
-        tokens = Tuple(W.tokenmap[j] for j in c)
 
         charmap[i] = string
         tokenmap[string] = i
-        reducemap[i] = tokens
-        nmap[tokens...] = i
     end
 
-    return NCharSpace{n}(charmap, tokenmap, W.units, W.unit_length, reducemap, nmap, size, collect(1:size))
+    return NCharSpace{n}(charmap, tokenmap, W.units, W.unit_length, size, collect(1:size))
 end
 
 function reduce(W::NCharSpace{N}) ::NCharSpace{1} where N
@@ -230,7 +261,7 @@ function nchar!(txt::Txt, n::Int) ::Txt
     end
 
     W = txt.charspace ^ n
-    txt.tokenised = [W.nmap[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
+    txt.tokenised = [W.reducemap[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
     txt.charspace = W
     return txt
 end
@@ -242,7 +273,7 @@ function nchar(txt::Txt, n::Int) ::Txt
     end
 
     W = txt.charspace ^ n
-    new_tokenised = [W.nmap[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
+    new_tokenised = [W.reducemap[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
     return Txt(txt.raw, txt.case_sensitive, txt.cases, W, new_tokenised, txt.frozen, txt.is_tokenised)
 end
 
