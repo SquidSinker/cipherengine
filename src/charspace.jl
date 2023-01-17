@@ -385,6 +385,7 @@ function untokenise(txt::Txt, W::NCharSpace{1}; restore_frozen::Bool = true, res
 
     return raw
 end
+untokenise(txt::Txt; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(txt, txt.charspace; restore_frozen = restore_frozen, restore_case = restore_case)
 untokenise(txt::Txt, nothing::Nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(txt, txt.charspace; restore_frozen = restore_frozen, restore_case = restore_case)
 untokenise(txt::Txt, W::NCharSpace{N} where N; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(reduce(txt))
 

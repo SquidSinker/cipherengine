@@ -1,7 +1,6 @@
 import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex, Base.iterate
 import Random.shuffle!
-include("charspace.jl")
-include("cipher.jl")
+include("tuco.jl")
 include("array functions.jl")
 #=
 

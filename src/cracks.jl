@@ -1,5 +1,4 @@
 include("substitution.jl")
-include("tuco.jl")
 include("genetics.jl")
 
 import IterTools.product
