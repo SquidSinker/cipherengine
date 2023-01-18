@@ -1,6 +1,6 @@
 name = "rxciphers"
 uuid = "5286dc34-9e20-4123-8e59-fcde100af23f"
-authors = ["rxwop <robiwop@gmail.com>", "Nayoar"]
+authors = ["rxwop <robiwop@gmail.com>", "Nayoar <nayoar8128@gmail.com>"]
 version = "0.1.0"
 
 [deps]

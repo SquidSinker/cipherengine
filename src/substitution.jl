@@ -1,7 +1,6 @@
 import Base.length, Base.show, Base.+, Base.-, Base.==, Base.getindex, Base.iterate
 import Random.shuffle!
 include("tuco.jl")
-include("array functions.jl")
 #=
 
 The Substitution object holds a Vector, where the ith entry is the token that Substitutes i in the cipher

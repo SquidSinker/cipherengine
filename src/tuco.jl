@@ -5,6 +5,7 @@ TUCO handles all statistical stuff, including fitness statistics
 
 =#
 include("cipher.jl")
+include("array functions.jl")
 using Statistics
 
 
@@ -272,8 +273,6 @@ end
 
 
 # STRING ANALYSIS ###################################
-
-include("convolution.jl")
 
 # Rolling average of data, sampled by window
 rolling_average(data::Vector, window::Int) ::Vector{Float64} = real.(Conv1D_reals(data, ones(window) / window))

@@ -1,4 +1,4 @@
-include("substitution.jl")
+include("periodic_substitution.jl")
 include("genetics.jl")
 
 import IterTools.product
