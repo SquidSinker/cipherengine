@@ -1,26 +1,27 @@
+using rxciphers
 using Test
-include("test_results.jl")
+using JLD2
+include("test results.jl")
+BASE_FOLDER = dirname(dirname(pathof(rxciphers)))
 
-include("charspace.jl")
-include("substitution.jl")
-include("periodic_substitution.jl")
-include("cracks.jl")
-include("tuco.jl")
-include("transposition.jl")
+@testset "rxciphers.jl" begin
+    # Write your tests here.
 
-@load "jld2/samples.jld2" orwell
-const NULL_TXT = Txt("")
+    @load "jld2/samples.jld2"
 
-function test_charspace()
+    # NCharSpace
     t = orwell.raw
     T = Txt(t)
     @test tokenise!(T).tokenised == orwell_tokens
     @test untokenise!(T).raw == t
+    # Remains:
+    # reduce, nchar
+    # union
+    # Base. overloads
 
-    return nothing
-end
 
-function test_substitution()
+
+    # Substitution
     S = Substitution(26)
     @test S.mapping == collect(1:26)
     @test S.tokens == S.mapping
@@ -49,11 +50,13 @@ function test_substitution()
 
     @test Caesar(2, 10) + Caesar(3, 10) == Caesar(5, 10)
     @test frequency_matched_Substitution(orwell).mapping == freq_match_orwell_mapping
+    # Remains:
+    # shift, switch, mutate
+    # Base. overloads
 
-    return nothing
-end
 
-function test_periodic_substitution()
+
+    # Periodic Substitution
     tokenise!(orwell)
 
     Vigenere_test = Vigenere("ABBA", Alphabet)
@@ -69,28 +72,35 @@ function test_periodic_substitution()
     periodic_affine_enc = Periodic_Affine_test(orwell)
     @test periodic_affine_enc.tokenised == periodic_affine_123_765_orwell_tokens
     @test crack_Periodic_Affine(periodic_affine_enc) == Periodic_Affine_test
+    # Remains:
+    # Base. overloads
 
-    return nothing
-end
+    # AbstractCipher & Encryption
 
-function test_transposition()
-    tokenise!(orwell)
+    # Remains:
+    # __constr__
+    # push!, iterate
+    # apply, invert
+    # Lambda, Retokenise, Reassign
 
-    Columnar_test = Columnar([1,4,3,2])
-    columnar_enc = Columnar_test(orwell)
-    @test columnar_enc.tokenised == columnar_1432_orwell_tokens
+    # Tuco
 
-    invert!(Columnar_test)
-    @test Columnar_test(columnar_enc).tokenised == orwell_tokens
+    # Remains:
+    # __gramlogs, orthodot
+    # appearances, frequencies
+    # ioc, periodic_ioc
+    # bbin_probabilities
+    # find_period (retested in Periodic Substitution)
+    # divisors, factorise
+    # blocks, block_apply_stats, rolling, rolling_average, char_distribution
+    # substructure_sigma, substructure_variance
 
-    Permutation_test = Permutation([1,5,3,2,4])
-    permutation_enc = Permutation_test(orwell)
-    @test permutation_enc.tokenised == permutation_15324_orwell_tokens
+    # Array functions
 
-    invert!(Permutation_test)
-    @test Permutation_test(permutation_enc).tokenised == orwell_tokens
-
-    println("AMSCO, Railfence remain untested")
-
-    return nothing
+    # Remains:
+    # switch, switch!
+    # safe_reshape_2D
+    # checkperm
+    # affine
+    # normalise!
 end

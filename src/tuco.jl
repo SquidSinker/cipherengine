@@ -4,7 +4,8 @@ TUCO is a drug lord.
 TUCO handles all statistical stuff, including fitness statistics
 
 =#
-include("charspace.jl")
+include("cipher.jl")
+include("array functions.jl")
 using Statistics
 
 
@@ -15,7 +16,6 @@ using JLD2
 
 @load "jld2/monogram_frequencies.jld2" monogram_freq
 @load "jld2/bigram_frequencies.jld2" bigram_freq
-@load "jld2/bibigram_scores_arr.jld2" bibigram_scores_arr
 
 
 
@@ -90,6 +90,42 @@ function orthodot(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq; or
     magnitude = sum(frequencies .^ 2) * sum(ref_frequencies .^ 2)
 
     return sum(frequencies .* ref_frequencies) / sqrt(magnitude)
+end
+
+# BATCH BINOMIAL ###################################################################################
+
+function batch_binomial_pd(X::Vector{Int}, N::Int, p::Float64) ::Vector{Float64}
+    mu = N * p
+    var = 2 * mu * (1 - p) # 2 carried through to reduce operations
+
+    M = 7e2 - (maximum(X) - mu)^2 / var
+
+    PX = [exp( M - (x - mu)^2 / var ) for x in X]
+
+    PX = safe_normalise(PX)
+    
+    #PX[PX .== 0] .= 1e-300
+
+    return PX
+end
+
+function safe_normalise(a::Vector) ::Vector
+    s = sum(a)
+    if s == 0 | isnan(s)
+        L = length(a)
+        return fill(1 / L, (L,))
+    end
+    return a / s
+end
+
+
+
+# batch binomial probabilities A[i,j] that token j represents i (forwards i -> j)
+function bbin_probabilities(txt::Txt, ref_frequencies::Vector{Float64} = monogram_freq) ::Matrix{Float64}
+    tallies = appearances(txt)
+    L = length(txt)
+
+    return permutedims(hcat([batch_binomial_pd(tallies, L, i) for i in ref_frequencies]...))
 end
 
 
@@ -237,8 +273,6 @@ end
 
 
 # STRING ANALYSIS ###################################
-
-include("convolution.jl")
 
 # Rolling average of data, sampled by window
 rolling_average(data::Vector, window::Int) ::Vector{Float64} = real.(Conv1D_reals(data, ones(window) / window))

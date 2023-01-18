@@ -1,3 +1,5 @@
+using FFTW
+
 # Switches two entries at posa posb in any Vector
 function switch!(self::AbstractVector, posa::Int, posb::Int) ::AbstractVector
     self[posa], self[posb] = self[posb], self[posa]
@@ -108,4 +110,17 @@ end
 function normalise!(arr::Array{Float64}) ::Array{Float64}
     arr /= sum(arr)
     return arr
+end
+
+
+
+# CONVOLUTION ######################################
+function Conv1D_reals(a::Vector{T}, b::Vector{T}) where T <: Real
+    N = length(a)
+    M = length(b)
+
+    a = [a ; zeros(M - 1)]     # N + M - 1
+    b = [b ; zeros(N - 1)]     # N + M - 1
+
+    return ifft(fft(a) .* fft(b))
 end
