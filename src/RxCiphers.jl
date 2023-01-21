@@ -1,4 +1,4 @@
-module rxciphers
+module RxCiphers
 
 include("cracks.jl") # > genetics + p_subsitution > substitution > tuco > array_f + cipher > charspace
 export crack_Caesar, crack_Affine
