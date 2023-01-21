@@ -1,10 +1,10 @@
-using rxciphers
+using RxCiphers
 using Test
 using JLD2
 include("test results.jl")
-BASE_FOLDER = dirname(dirname(pathof(rxciphers)))
+BASE_FOLDER = dirname(dirname(pathof(RxCiphers)))
 
-@testset "rxciphers.jl" begin
+@testset "RxCiphers.jl" begin
     # Write your tests here.
 
     @load "jld2/samples.jld2"
