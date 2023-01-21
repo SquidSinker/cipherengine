@@ -8,14 +8,15 @@ include("cipher.jl")
 include("array functions.jl")
 using Statistics
 
+jldstem = joinpath(@__DIR__, "..", "jld2")
 
 using JLD2
-@load "jld2/quadgram_scores.jld2" quadgram_scores
-@load "jld2/bigram_scores.jld2" bigram_scores
-@load "jld2/poogramfart_scores.jld2" poogram_scores
+@load abspath(joinpath(jldstem, "quadgram_scores.jld2")) quadgram_scores
+@load abspath(joinpath(jldstem, "bigram_scores.jld2")) bigram_scores
+@load abspath(joinpath(jldstem, "poogramfart_scores.jld2")) poogram_scores
 
-@load "jld2/monogram_frequencies.jld2" monogram_freq
-@load "jld2/bigram_frequencies.jld2" bigram_freq
+@load abspath(joinpath(jldstem, "monogram_frequencies.jld2")) monogram_freq
+@load abspath(joinpath(jldstem, "bigram_frequencies.jld2")) bigram_freq
 
 
 
