@@ -103,7 +103,7 @@ end
 
 
 # NORMALISATION ####################################
-function normalise!(arr::Array{Float64}; dims::Int) ::Array{Float64}
+function normalise!(arr::Array{Float64}, dims) ::Array{Float64}
     arr ./= sum(arr; dims = dims)
     return arr
 end
@@ -111,7 +111,6 @@ function normalise!(arr::Array{Float64}) ::Array{Float64}
     arr /= sum(arr)
     return arr
 end
-
 
 
 # CONVOLUTION ######################################
