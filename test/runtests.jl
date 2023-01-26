@@ -2,10 +2,8 @@ using RxCiphers
 using Test
 using JLD2
 include("test results.jl")
-BASE_FOLDER = dirname(dirname(pathof(RxCiphers)))
 
 @testset "RxCiphers.jl" begin
-    # Write your tests here.
 
     @load "jld2/samples.jld2"
 
@@ -14,8 +12,16 @@ BASE_FOLDER = dirname(dirname(pathof(RxCiphers)))
     T = Txt(t)
     @test tokenise!(T).tokenised == orwell_tokens
     @test untokenise!(T).raw == t
+
+    W_test = CharSpace(["1", "2", "3"])
+    W_squared = W_test ^ 2
+    @test W_squared.charmap == w_squared_charmap
+    @test W_squared.reducemap[2, 3] == 8
+    @test W_squared.reducemap[8] == [2, 3]
+    @test W_squared.units == W_test.charmap
+    @test RxCiphers.reduce(W_squared) == W_test
     # Remains:
-    # reduce, nchar
+    # Txt nchar, reduce
     # union
     # Base. overloads
 
