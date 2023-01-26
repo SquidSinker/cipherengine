@@ -1,5 +1,5 @@
 include("charspace.jl")
-import Base.push!, Base.iterate
+import Base.push!, Base.iterate, Base.insert!, Base.copy, Base.append!, Base.getindex, Base.setindex!, Base.show, Base.length
 
 abstract type AbstractCipher end
 
@@ -38,41 +38,64 @@ end
 mutable struct Encryption
     ciphers::Vector{AbstractCipher}
 
-    inverted::Bool
-
     function Encryption(layers::Vector{T}) where T <: AbstractCipher
-        new(layers, false)
+        new(layers)
     end
 end
 
 Encryption(args::AbstractCipher...) = Encryption(collect(args))
 
+function copy(E::Encryption)
+    return Encryption(deepcopy(E.ciphers))
+end
+
+length(E::Encryption) = length(E.ciphers)
+getindex(E::Encryption, inds) = getindex(E.ciphers, inds)
+setindex!(E::Encryption, val::AbstractCipher, inds) = setindex!(E.ciphers, val, inds)
+
 function push!(E::Encryption, C::AbstractCipher)
-    if E.inverted
-        error("Pushing to inverted Encryption not yet implemented")
-        return
-    end
     push!(E.ciphers, C)
     return E
+end
+
+function insert!(E::Encryption, index::Int, C::AbstractCipher)
+    insert!(E.ciphers, index, C)
+    return E
+end
+
+function append!(E1::Encryption, E2::Vararg{Encryption, N}) ::Encryption where N
+    append!(E1.ciphers, (i.ciphers for i in E2)...)
+    return E1
 end
 
 iterate(E::Encryption) = iterate(E.ciphers)
 iterate(E::Encryption, state::Int) = iterate(E.ciphers, state)
 
+function show(io::IO, E::Encryption)
+    show(io, E.ciphers)
+end
+
+function show(io::IO, ::MIME"text/plain", E::Encryption)
+    println(io, "$(length(E))-element Encryption:")
+    show(io, E.ciphers)
+end
+
+# TO DO
+# cipher tags
+
 (C::AbstractCipher)(D::AbstractCipher) = Encryption([D, C])
-(C::AbstractCipher)(E::Encryption) = push!(E, C)
+(C::AbstractCipher)(E::Encryption) = push!(copy(E), C)
 (C::AbstractCipher)(n::Nothing) = C
-# TODO:
-# other way round of line 54
-# make combinbing Encryption with Cipher work with inverted Encryptions
+(E::Encryption)(C::AbstractCipher) = insert!(copy(E), 1, C)
+(E1::Encryption)(E2::Encryption) = append!(copy(E2), E1)
+
 
 function invert!(E::Encryption)
     invert!.(E.ciphers)
     reverse!(E.ciphers)
-    E.inverted = !E.inverted
     return E
 end
-invert(E::Encryption) = invert!(deepcopy(E))
+invert(E::Encryption) = invert!(copy(E))
 
 function apply!(E::Encryption, txt::Txt) ::Txt
     if !txt.is_tokenised
@@ -88,7 +111,7 @@ end
 
 # It is faster to create one copy and mutate than create copies every time
 function apply(E::Encryption, txt::Txt) ::Txt
-    new_txt = deepcopy(txt)
+    new_txt = copy(txt)
     apply!(E, new_txt)
 
     return new_txt
