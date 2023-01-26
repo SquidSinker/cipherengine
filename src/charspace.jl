@@ -4,20 +4,25 @@ const NULL_TOKEN = 0
 
 #####################################################################
 
-struct Nchar_index_handler{N, L}
+struct NCharIndexHandler
+    multiplicity::Int
+    number::Int
     size::Int
     
-    function Nchar_index_handler{N, L}() where {N, L}
-        new(L ^ N)
+    function NCharIndexHandler(N::Int, L::Int)
+        new(N, L, L ^ N)
     end
 end
 
-function getindex(handl::Nchar_index_handler{N, L}, i::Int) ::Vector{Int} where {N, L}
+function getindex(handl::NCharIndexHandler, i::Int) ::Vector{Int}
     if !(1 <= i <= handl.size)
-        e = ErrorException("Tried to access $(handl.size)-element Nchar_index_handler at index [$(i)]")
+        e = ErrorException("Tried to access $(handl.size)-element NCharIndexHandler at index [$(i)]")
         throw(e)
     end
     i -= 1
+
+    N = handl.multiplicity
+    L = handl.number
 
     out = Vector{Int}(undef, N)
     for ex in N-1:-1:0
@@ -29,11 +34,13 @@ function getindex(handl::Nchar_index_handler{N, L}, i::Int) ::Vector{Int} where 
     return out
 end
 
-function getindex(handl::Nchar_index_handler{N, L}, indices::Vararg{Number, N}) ::Int where {N, L}
+function getindex(handl::NCharIndexHandler, indices::Vararg{Number, N}) ::Int where N
+    L = handl.number
+
     i = 1
     for (j, k) in enumerate(indices)
         if !(1 <= k <= L)
-            e = ErrorException("Tried to access $(L)-element Nchar_index_handler at index [$(k)]")
+            e = ErrorException("Tried to access $(L)-element NCharIndexHandler at index [$(k)]")
             throw(e)
         end
 
@@ -52,7 +59,7 @@ struct NCharSpace{N}
     units::Vector{String}
     unit_length::Int
 
-    reducemap::Nchar_index_handler
+    reducemap::NCharIndexHandler
 
     size::Int
     tokens::Vector{Int}
@@ -64,7 +71,7 @@ struct NCharSpace{N}
             throw(e)
         end
 
-        new{N}(charmap, tokenmap, units, unit_length, Nchar_index_handler{N, length(units)}(), size, tokens)
+        new{N}(charmap, tokenmap, units, unit_length, NCharIndexHandler(N, length(units)), size, tokens)
     end
     # DO NOT USE UNSAFE
 
