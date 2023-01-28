@@ -175,6 +175,18 @@ end
 
 
 
+function checktoken(token::Int, W::NCharSpace)
+    b = 0 <= token <= W.size
+    if b
+        return token
+    else
+        e = ArgumentError("Token does not exist in character space")
+        throw(e)
+    end
+end
+
+
+
 
 ##########################################################################################
 
