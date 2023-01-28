@@ -29,7 +29,7 @@ export substructure_variance, substructure_sigma
 export NCharSpace, CharSpace, Alphabet, Decimal, Hexadecimal
 export reduce, union
 export getindex, ^, ==, +, show, length, iterate, setindex!, lastindex, copy
-export Txt, tokenise, untokenise, tokenise!, untokenise!
+export Txt, tokenise, untokenise, tokenise!, untokenise!, checktoken
 export nchar!, nchar, reduce!
 # array functions
 export switch, switch!
