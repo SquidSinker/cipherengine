@@ -43,7 +43,7 @@ macro bruteforce(func_call::Expr, fitness::Symbol)
 
     isblank = isequal.(arguments, :(:))
     test_sets = Vector(undef, L)
-    for arg in 1:L
+    for arg in eachindex(arguments)
         if isblank[arg]
             param_extraction_args = deepcopy(arguments)
             param_extraction_args[arg] = Colon()
@@ -152,6 +152,7 @@ function crack_Columnar(txt::Txt, n::Int)
     T = permutedims(T)
     
     follow = Matrix{Float64}(undef, n, n)
+    ########### EACHINDEX IS BETTER
     for i in 1:n
         for j in 1:n
             follow[i, j] = sum([ bigram_scores[i,j] for (i,j) in zip(T[i, :], T[j, :])])

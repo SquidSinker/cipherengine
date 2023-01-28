@@ -51,3 +51,6 @@ end
 # Convolution (token safe)
 
 # bruteforce + optimise function
+
+
+# LinearIndex CartesianIndex instead of terrible NCharIndexHandler

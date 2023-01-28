@@ -248,7 +248,7 @@ function rolling(f::Function, txt::Txt, window::Int) ::Vector
     L = length(txt)
     values = Vector(undef, L)
     wing = round(Int, window / 2)
-
+    ########## IMPLEMENT EACHINDEX
     for i in 1:L
         start = i - wing
         final = i + wing
