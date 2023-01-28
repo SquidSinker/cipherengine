@@ -90,7 +90,7 @@ function CharSpace(chars::Vector{String}) ::NCharSpace{1}
     end
 
     tokenmap = Dict{String, Int}()
-    for (i, j) in pairs(uchars)
+    for (i, j) in enumerate(uchars)
         tokenmap[j] = i
     end
 
