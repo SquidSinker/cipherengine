@@ -31,6 +31,7 @@ export reduce, union
 export getindex, ^, ==, +, show, length, iterate, setindex!, lastindex, copy
 export Txt, tokenise, untokenise, tokenise!, untokenise!, checktoken
 export nchar!, nchar, reduce!
+export TokeniseError
 # array functions
 export switch, switch!
 export safe_reshape_2D
