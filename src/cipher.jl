@@ -6,7 +6,7 @@ abstract type AbstractCipher end
 # OVERRIDES:
 # preferably override apply(cipher, vector; safety_checks)
 # if Txt obj necessary, override apply!(cipher, txt)
-function apply!(C::AbstractCipher, txt::Txt) ::Txt
+function apply!(C::T, txt::Txt) ::Txt where T <: AbstractCipher
     if !txt.is_tokenised
         error("Cannot apply Cipher to untokenised Txt")
     end
@@ -16,14 +16,14 @@ function apply!(C::AbstractCipher, txt::Txt) ::Txt
     return txt
 end
 
-function apply(C::AbstractCipher, txt::Txt) ::Txt
+function apply(C::T, txt::Txt) ::Txt where T <: AbstractCipher
     new_txt = copy(txt)
     apply!(C, new_txt)
 
     return new_txt
 end
 
-(C::AbstractCipher)(txt::Txt) = apply(C, txt)
+(C::T)(txt::Txt) where T <: AbstractCipher = apply(C, txt)
 
 invert(C::AbstractCipher) = invert!(deepcopy(C))
 
