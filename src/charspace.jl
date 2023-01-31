@@ -203,8 +203,15 @@ end
 Txt(text, case_sensitive = false) = Txt(text, case_sensitive, isuppercase.(collect(text)), nothing, nothing, nothing, false)
 
 const TokeniseError = ErrorException("Txt is not tokenised")
+function checktokenised(txt::Txt) ::Vector{Int}
+    if txt.is_tokenised
+        return txt.tokenised
+    end
 
-length(txt::Txt) ::Int = txt.is_tokenised ? length(txt.tokenised) : throw(TokeniseError)
+    throw(TokeniseError)
+end
+
+length(txt::Txt) ::Int = length(checktokenised(txt))
 
 function ==(T1::Txt, T2::Union{Txt, Vector{Int}}) ::Bool
     if !T1.is_tokenised
@@ -224,7 +231,7 @@ end
 
 ==(T1::Vector{Int}, T2::Txt) ::Bool = ==(T2, T1)
 
-iterate(txt::Txt) = txt.is_tokenised ? iterate(txt.tokenised) : throw(TokeniseError)
+iterate(txt::Txt) = iterate(checktokenised(txt))
 iterate(txt::Txt, state::Int) = iterate(txt.tokenised, state)
 
 function getindex(txt::Txt, args) ::Union{Int, Txt}
@@ -242,8 +249,8 @@ function getindex(txt::Txt, args) ::Union{Int, Txt}
     return t
 end
 
-setindex!(txt::Txt, X, i::Int) = txt.is_tokenised ? txt.tokenised[i] = X : throw(TokeniseError)
-lastindex(txt::Txt) = lastindex(txt.tokenised)
+setindex!(txt::Txt, X, i::Int) = setindex!(checktokenised(txt), X, i)
+lastindex(txt::Txt) = lastindex(checktokenised(txt))
 
 copy(txt::Txt) = Txt(txt.raw, txt.case_sensitive, txt.cases, txt.charspace, copy(txt.tokenised), txt.frozen, txt.is_tokenised)
 
@@ -274,6 +281,10 @@ end
 
 
 function nchar!(txt::Txt, n::Int) ::Txt
+    if !txt.is_tokenised
+        throw(TokeniseError)
+    end
+
     if length(txt.tokenised) % n != 0
         e = ArgumentError("Txt length is not divisible by $n")
         throw(e)
@@ -286,6 +297,10 @@ function nchar!(txt::Txt, n::Int) ::Txt
 end
 
 function nchar(txt::Txt, n::Int) ::Txt
+    if !txt.is_tokenised
+        throw(TokeniseError)
+    end
+
     if length(txt.tokenised) % n != 0
         e = ArgumentError("Txt length is not divisible by $n")
         throw(e)
@@ -297,6 +312,10 @@ function nchar(txt::Txt, n::Int) ::Txt
 end
 
 function reduce!(txt::Txt) ::Txt
+    if !txt.is_tokenised
+        throw(TokeniseError)
+    end
+
     W = reduce(txt.charspace)
     new_tokenised = Vector{Int}()
     for i in txt.tokenised
@@ -308,6 +327,10 @@ function reduce!(txt::Txt) ::Txt
 end
 
 function reduce(txt::Txt) ::Txt
+    if !txt.is_tokenised
+        throw(TokeniseError)
+    end
+    
     W = reduce(txt.charspace)
     new_tokenised = Vector{Int}()
     for i in txt.tokenised
