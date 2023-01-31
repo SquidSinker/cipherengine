@@ -145,45 +145,45 @@ end
 apply(L::Lambda, v::Vector{Int}; safety_checks::Txt) = L.func.(v)
 
 
-mutable struct Retokenise <: AbstractCipher
-    OldCharSpace::NCharSpace{1}
-    NewCharSpace::NCharSpace{1}
-end
+# mutable struct Retokenise <: AbstractCipher
+#     OldCharSpace::NCharSpace{1}
+#     NewCharSpace::NCharSpace{1}
+# end
 
-function apply!(R::Retokenise, txt::Txt) ::Txt
-    if !txt.is_tokenised
-        error("Cannot retokenise untokenised Txt")
-    end
+# function apply!(R::Retokenise, txt::Txt) ::Txt
+#     if !txt.is_tokenised
+#         error("Cannot retokenise untokenised Txt")
+#     end
 
-    untokenise!(txt, R.OldCharSpace; restore_case = false, restore_frozen = false)
-    tokenise!(txt, R.NewCharSpace)
+#     untokenise!(txt, R.OldCharSpace; restore_case = false, restore_frozen = false)
+#     tokenise!(txt, R.NewCharSpace)
 
-    return txt
-end
-
-
-
-mutable struct Reassign <: AbstractCipher
-    OldCharSpace::NCharSpace{1}
-    NewCharSpace::NCharSpace{1}
-end
-
-function invert!(R::Union{Reassign, Retokenise})
-    R.OldCharSpace, R.NewCharSpace = R.NewCharSpace, R.OldCharSpace
-    return R
-end
+#     return txt
+# end
 
 
-function apply!(C::Reassign, txt::Txt) ::Txt
-    if !txt.is_tokenised
-        error("Cannot apply Cipher to untokenised Txt")
-    end
 
-    if txt.charspace != C.OldCharSpace
-        error("Txt character space does not match Reassign input")
-    end
+# mutable struct Reassign <: AbstractCipher
+#     OldCharSpace::NCharSpace{1}
+#     NewCharSpace::NCharSpace{1}
+# end
 
-    txt.charspace = C.NewCharSpace
+# function invert!(R::Union{Reassign, Retokenise})
+#     R.OldCharSpace, R.NewCharSpace = R.NewCharSpace, R.OldCharSpace
+#     return R
+# end
 
-    return txt
-end
+
+# function apply!(C::Reassign, txt::Txt) ::Txt
+#     if !txt.is_tokenised
+#         error("Cannot apply Cipher to untokenised Txt")
+#     end
+
+#     if txt.charspace != C.OldCharSpace
+#         error("Txt character space does not match Reassign input")
+#     end
+
+#     txt.charspace = C.NewCharSpace
+
+#     return txt
+# end
