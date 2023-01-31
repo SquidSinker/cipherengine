@@ -252,7 +252,13 @@ end
 setindex!(txt::Txt, X, i::Int) = setindex!(checktokenised(txt), X, i)
 lastindex(txt::Txt) = lastindex(checktokenised(txt))
 
-copy(txt::Txt) = Txt(txt.raw, txt.case_sensitive, txt.cases, txt.charspace, copy(txt.tokenised), txt.frozen, txt.is_tokenised)
+function copy(txt::Txt) ::Txt
+    if txt.is_tokenised
+        return Txt(txt.raw, txt.case_sensitive, txt.cases, txt.charspace, copy(txt.tokenised), txt.frozen, txt.is_tokenised)
+    else
+        return Txt(txt.raw, txt.case_sensitive, txt.cases, txt.charspace, txt.tokenised, txt.frozen, txt.is_tokenised)
+    end
+end
 
 function show(io::IO, txt::Txt)
     if txt.is_tokenised
