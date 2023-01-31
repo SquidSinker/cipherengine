@@ -23,7 +23,7 @@ function apply(C::T, txt::Txt) ::Txt where T <: AbstractCipher
     return new_txt
 end
 
-(C::T)(txt::Txt) where T <: AbstractCipher = apply(C, txt)
+(C::T where T <: AbstractCipher)(txt::Txt) = apply(C, txt)
 
 invert(C::AbstractCipher) = invert!(deepcopy(C))
 
