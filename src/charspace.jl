@@ -2,55 +2,7 @@ import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex
 
 const NULL_TOKEN = 0
 
-#####################################################################
 
-struct NCharIndexHandler
-    multiplicity::Int
-    number::Int
-    size::Int
-    
-    function NCharIndexHandler(N::Int, L::Int)
-        new(N, L, L ^ N)
-    end
-end
-
-function getindex(handl::NCharIndexHandler, i::Int) ::Vector{Int}
-    if !(1 <= i <= handl.size)
-        e = ErrorException("Tried to access $(handl.size)-element NCharIndexHandler at index [$(i)]")
-        throw(e)
-    end
-    i -= 1
-
-    N = handl.multiplicity
-    L = handl.number
-
-    out = Vector{Int}(undef, N)
-    for ex in N-1:-1:0
-        coeff = L ^ ex
-        out[ex + 1] = div(i, coeff) + 1
-        i %= coeff
-    end
-
-    return out
-end
-
-function getindex(handl::NCharIndexHandler, indices::Vararg{Number, N}) ::Int where N
-    L = handl.number
-
-    i = 1
-    for (j, k) in enumerate(indices)
-        if !(1 <= k <= L)
-            e = ErrorException("Tried to access $(L)-element NCharIndexHandler at index [$(k)]")
-            throw(e)
-        end
-
-        i += (k - 1) * L ^ (j - 1)
-    end
-
-    return i
-end
-
-#####################################################################
 
 struct NCharSpace{N}
     charmap::Vector{String}
@@ -59,7 +11,8 @@ struct NCharSpace{N}
     units::Vector{String}
     unit_length::Int
 
-    reducemap::NCharIndexHandler
+    linear::LinearIndices{N, NTuple{N, Base.OneTo{Int64}}}
+    cartesian::CartesianIndices{N, NTuple{N, Base.OneTo{Int64}}}
 
     size::Int
     tokens::Vector{Int}
@@ -71,7 +24,11 @@ struct NCharSpace{N}
             throw(e)
         end
 
-        new{N}(charmap, tokenmap, units, unit_length, NCharIndexHandler(N, length(units)), size, tokens)
+        shape = Tuple(length(units) for _ in 1:N)
+        linear = LinearIndices(shape)
+        cartesian = CartesianIndices(shape)
+
+        new{N}(charmap, tokenmap, units, unit_length, linear, cartesian, size, tokens)
     end
     # DO NOT USE UNSAFE
 
@@ -307,7 +264,7 @@ function txtnchar!(txt::Txt, n::Int) ::Txt
     end
 
     W = txt.charspace ^ n
-    txt.tokenised = [W.reducemap[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
+    txt.tokenised = [W.linear[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
     txt.charspace = W
     return txt
 end
@@ -323,7 +280,7 @@ function txtnchar(txt::Txt, n::Int) ::Txt
     end
 
     W = txt.charspace ^ n
-    new_tokenised = [W.reducemap[ txt.tokenised[i - n + 1:i]... ] for i in n:n:lastindex(txt.tokenised)]
+    new_tokenised = [W.linear[ txt.tokenised[i - n + 1:i]... ][1] for i in n:n:lastindex(txt.tokenised)]
     return Txt(txt.raw, txt.case_sensitive, txt.cases, W, new_tokenised, txt.frozen, txt.is_tokenised)
 end
 
@@ -335,7 +292,7 @@ function txtreduce!(txt::Txt) ::Txt
     W = nchar(txt.charspace, 1)
     new_tokenised = Vector{Int}()
     for i in txt.tokenised
-        append!(new_tokenised, txt.charspace.reducemap[i])
+        append!(new_tokenised, Tuple(txt.charspace.cartesian[i]))
     end
     txt.tokenised = new_tokenised
     txt.charspace = W
@@ -350,7 +307,7 @@ function txtreduce(txt::Txt) ::Txt
     W = nchar(txt.charspace, 1)
     new_tokenised = Vector{Int}()
     for i in txt.tokenised
-        append!(new_tokenised, txt.charspace.reducemap[i])
+        append!(new_tokenised, Tuple(txt.charspace.cartesian[i]))
     end
     return Txt(txt.raw, txt.case_sensitive, txt.cases, W, new_tokenised, txt.frozen, txt.is_tokenised)
 end

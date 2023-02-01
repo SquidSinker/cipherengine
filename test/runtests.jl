@@ -16,8 +16,8 @@ include("test results.jl")
     W_test = CharSpace(["1", "2", "3"])
     W_squared = W_test ^ 2
     @test W_squared.charmap == w_squared_charmap
-    @test W_squared.reducemap[2, 3] == 8
-    @test W_squared.reducemap[8] == [2, 3]
+    @test W_squared.linear[2, 3][1] == 8
+    @test Tuple(W_squared.cartesian[8]) == (2, 3)
     @test W_squared.units == W_test.charmap
     @test nchar(W_squared, 1) == W_test
     # Remains:
