@@ -114,7 +114,7 @@ function ^(W::NCharSpace{1}, n::Int) ::NCharSpace{n}
     return NCharSpace{n}(charmap, tokenmap, W.units, W.unit_length, size, collect(1:size))
 end
 
-function reduce(W::NCharSpace{N}) ::NCharSpace{1} where N
+function charspacereduce(W::NCharSpace{N}) ::NCharSpace{1} where N
     if N == 1
         return W
     else
@@ -122,11 +122,21 @@ function reduce(W::NCharSpace{N}) ::NCharSpace{1} where N
     end
 end
 
+function nchar(W::NCharSpace{N}, n::Int) where N
+    if n == 1
+        return charspacereduce(W)
+    elseif N == 1
+        return W ^ N
+    else
+        return charspacereduce(W) ^ n
+    end
+end
+
 ############################################################################################
 
 CharSpace(chars::Vector{Char}) = CharSpace(string.(chars))
 CharSpace(chars::String) = CharSpace(string.(collect(chars)))
-CharSpace(W::NCharSpace{N}) where N = reduce(W)
+CharSpace(W::NCharSpace{N}) where N = charspacereduce(W)
 
 ==(W1::NCharSpace{A}, W2::NCharSpace{B}) where {A, B} = (A == B) && (W1.charmap == W2.charmap) && (W1.units == W2.units)
 
@@ -286,7 +296,7 @@ function show(io::IO, ::MIME"text/plain", txt::Txt)
 end
 
 
-function nchar!(txt::Txt, n::Int) ::Txt
+function txtnchar!(txt::Txt, n::Int) ::Txt
     if !txt.is_tokenised
         throw(TokeniseError)
     end
@@ -302,7 +312,7 @@ function nchar!(txt::Txt, n::Int) ::Txt
     return txt
 end
 
-function nchar(txt::Txt, n::Int) ::Txt
+function txtnchar(txt::Txt, n::Int) ::Txt
     if !txt.is_tokenised
         throw(TokeniseError)
     end
@@ -317,12 +327,12 @@ function nchar(txt::Txt, n::Int) ::Txt
     return Txt(txt.raw, txt.case_sensitive, txt.cases, W, new_tokenised, txt.frozen, txt.is_tokenised)
 end
 
-function reduce!(txt::Txt) ::Txt
+function txtreduce!(txt::Txt) ::Txt
     if !txt.is_tokenised
         throw(TokeniseError)
     end
 
-    W = reduce(txt.charspace)
+    W = nchar(txt.charspace, 1)
     new_tokenised = Vector{Int}()
     for i in txt.tokenised
         append!(new_tokenised, txt.charspace.reducemap[i])
@@ -332,17 +342,42 @@ function reduce!(txt::Txt) ::Txt
     return txt
 end
 
-function reduce(txt::Txt) ::Txt
+function txtreduce(txt::Txt) ::Txt
     if !txt.is_tokenised
         throw(TokeniseError)
     end
     
-    W = reduce(txt.charspace)
+    W = nchar(txt.charspace, 1)
     new_tokenised = Vector{Int}()
     for i in txt.tokenised
         append!(new_tokenised, txt.charspace.reducemap[i])
     end
     return Txt(txt.raw, txt.case_sensitive, txt.cases, W, new_tokenised, txt.frozen, txt.is_tokenised)
+end
+
+
+function nchar(txt::Txt, n::Int)
+    N = findparam(txt.charspace)
+
+    if n == 1
+        return txtreduce(txt)
+    elseif N == 1
+        return txtnchar(txt, n)
+    else
+        return txtnchar(txtreduce(txt), n)
+    end
+end
+
+function nchar!(txt::Txt, n::Int)
+    N = findparam(txt.charspace)
+
+    if n == 1
+        return txtreduce!(txt)
+    elseif N == 1
+        return txtnchar!(txt, n)
+    else
+        return txtnchar!(txtreduce!(txt), n)
+    end
 end
 
 
@@ -435,7 +470,7 @@ function untokenise(txt::Txt, W::NCharSpace{1}; restore_frozen::Bool = true, res
 end
 untokenise(txt::Txt; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(txt, txt.charspace; restore_frozen = restore_frozen, restore_case = restore_case)
 untokenise(txt::Txt, nothing::Nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(txt, txt.charspace; restore_frozen = restore_frozen, restore_case = restore_case)
-untokenise(txt::Txt, W::NCharSpace{N} where N; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(reduce(txt))
+untokenise(txt::Txt, W::NCharSpace{N} where N; restore_frozen::Bool = true, restore_case::Bool = true) ::String = untokenise(nchar(txt, 1))
 
 
 function tokenise!(txt::Txt, W::NCharSpace{1} = Alphabet) ::Txt

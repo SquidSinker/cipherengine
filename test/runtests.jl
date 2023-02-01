@@ -19,9 +19,9 @@ include("test results.jl")
     @test W_squared.reducemap[2, 3] == 8
     @test W_squared.reducemap[8] == [2, 3]
     @test W_squared.units == W_test.charmap
-    @test RxCiphers.reduce(W_squared) == W_test
+    @test nchar(W_squared, 1) == W_test
     # Remains:
-    # Txt nchar, reduce
+    # Txt nchar
     # union
     # Base. overloads
 

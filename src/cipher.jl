@@ -80,8 +80,6 @@ function show(io::IO, ::MIME"text/plain", E::Encryption)
     show(io, E.ciphers)
 end
 
-# TO DO
-# cipher tags
 
 (C::AbstractCipher)(D::AbstractCipher) = Encryption([D, C])
 (C::AbstractCipher)(E::Encryption) = push!(copy(E), C)

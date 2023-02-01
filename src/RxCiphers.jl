@@ -27,10 +27,10 @@ export blocks, block_apply_stats, rolling, rolling_average, char_distribution, K
 export substructure_variance, substructure_sigma
 # charspace
 export NCharSpace, CharSpace, Alphabet, Decimal, Hexadecimal
-export reduce, union
+export union
 export getindex, ^, ==, +, show, length, iterate, setindex!, lastindex, copy
 export Txt, tokenise, untokenise, tokenise!, untokenise!, checktoken
-export nchar!, nchar, reduce!
+export nchar!, nchar
 export TokeniseError, checktokenised
 # array functions
 export switch, switch!
