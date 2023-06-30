@@ -5,7 +5,8 @@ include("test results.jl")
 
 @testset "RxCiphers.jl" begin
 
-    @load "jld2/samples.jld2"
+    using .TxtSamples
+
 
     # NCharSpace
     t = orwell.raw

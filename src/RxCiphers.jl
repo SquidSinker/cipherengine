@@ -38,6 +38,9 @@ export safe_reshape_2D
 export checkperm
 export affine
 export normalise!
+# text samples
+include("samples.jl")
+export TxtSamples
 
 end
 
