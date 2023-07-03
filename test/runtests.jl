@@ -79,6 +79,15 @@ include("test results.jl")
     periodic_affine_enc = Periodic_Affine_test(orwell)
     @test periodic_affine_enc.tokenised == periodic_affine_123_765_orwell_tokens
     @test crack_Periodic_Affine(periodic_affine_enc) == Periodic_Affine_test
+
+    # Permutation
+    Permutation_test = Permutation([1,5,3,2,4], true)
+    permutation_enc = Permutation_test(orwell)
+    @test permutation_enc.tokenised == permutation_15324_orwell_tokens
+
+    invert!(Permutation_test)
+    @test Permutation_test(permutation_enc).tokenised == orwell_tokens
+
     # Remains:
     # Base. overloads
 

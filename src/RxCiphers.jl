@@ -8,6 +8,8 @@ export Encryption, AbstractCipher
 export push!, iterate
 export apply, apply!, invert, invert!
 export Lambda, Retokenise, Reassign
+# permutation
+export Permutation, invPermutation
 # periodic substitution
 export PeriodicSubstitution, Vigenere, Periodic_Affine
 export length, getindex, iterate, setindex!, ==, show
@@ -48,6 +50,7 @@ end
 
 # Transpositions (separating Permutation from Matrix)
 # Square Ciphers
+
 # Nihilist set (subst. transp.)
 # Keystream (generator; Autokey; OTP)
 # Grid Shift (therefore Cadenus)
@@ -55,6 +58,3 @@ end
 # Convolution (token safe)
 
 # bruteforce + optimise function
-
-
-# LinearIndex CartesianIndex instead of terrible NCharIndexHandler

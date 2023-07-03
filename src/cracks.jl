@@ -1,5 +1,5 @@
-include("periodic_substitution.jl")
 include("genetics.jl")
+include("permutation.jl")
 
 import IterTools.product
 
