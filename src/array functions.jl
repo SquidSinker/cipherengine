@@ -1,11 +1,21 @@
 using FFTW
 
 # Switches two entries at posa posb in any Vector
+"""
+    switch!(self::AbstractVector, posa::Int, posb::Int) -> AbstractVector
+
+Switches the entries at `posa` and `posb` in `self`.
+"""
 function switch!(self::AbstractVector, posa::Int, posb::Int) ::AbstractVector
     self[posa], self[posb] = self[posb], self[posa]
     return self
 end
 
+"""
+    switch!(v::AbstractVector, posa::Int, posb::Int) -> AbstractVector
+
+Switches the entries at `posa` and `posb` in `v`.
+"""
 switch(v::Vector{Int}, posa::Int, posb::Int) ::Vector{Int} = switch!(copy(v), posa, posb)
 
 
@@ -68,6 +78,11 @@ end
 
 
 # checks if vector is permutation and returns vector
+"""
+    checkperm(vector::Vector{Int}) -> Vector{Int}
+
+Throws `ArgumentError` if `vector` is not a permutation, returns `vector`.
+"""
 function checkperm(vector::Vector{Int}) ::Vector{Int}
     if !isperm(vector)
         e = ArgumentError("not a permutation")
@@ -103,6 +118,11 @@ end
 
 
 # NORMALISATION ####################################
+"""
+    normalise!(arr::Array{Float64} [, dims]) -> Array{Float64}
+
+Divides by the sum of `arr` to make the new sum `1.`, if `dims` are given, `arr` is normalised only in those dims.
+"""
 function normalise!(arr::Array{Float64}, dims) ::Array{Float64}
     arr ./= sum(arr; dims = dims)
     return arr
