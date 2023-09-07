@@ -1,8 +1,19 @@
 module TxtSamples
 
-export orwell, veryorwell, frandom, random, adfgvx, jmacro, blanc
+export orwell, veryorwell, frandom, random, adfgvx, jmacro, blanc, help
 
 using RxCiphers
+
+function help()
+    println("TxtSamples available:")
+    println("orwell - roughly 3000 character excerpt from George Orwell's 1984\n")
+    println("veryorwell - roughly 35000 character excerpt from George Orwell's 1984\n")
+    println("frandom - 2400 character string of capital letters drawn randomly from the English monogram frequency distribution\n")
+    println("random - 2400 character string of capital letters drawn randomly from a uniform distribution\n")
+    println("adfgvx - roughly 3000 character excerpt from http://www.practicalcryptography.com/ciphers/adfgvx-cipher/ Practical Cryptography's article on the ADFGVX cipher\n")
+    println("jmacro - roughly 3900 character excerpt from https://jkrumbiegel.com/pages/2021-06-07-macros-for-beginners/ an article on macros in Julia\n")
+    println("blanc - roughly 2200 character compilation of Benoit Blanc's voice lines in Glass Onion: A Knives Out Mystery")
+end
 
 orwell = Txt("It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him.The hallway smelt of boiled cabbage and old rag mats. At one end of it a coloured poster, too large for indoor display, had been tacked to the wall. It depicted simply an enormous face, more than a metre wide: the face of a man of about forty-five, with a heavy black moustache and ruggedly handsome features. Winston made for the stairs. It was no use trying the lift. Even at the best of times it was seldom working, and at present the electric current 
 was cut off during daylight hours. It was part of the economy drive in preparation for Hate Week. The flat was seven flights up, and Winston, who was thirty-nine 
