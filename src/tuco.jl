@@ -4,8 +4,6 @@ TUCO is a drug lord.
 TUCO handles all statistical stuff, including fitness statistics
 
 =#
-include("cipher.jl")
-include("array functions.jl")
 using Statistics
 
 jldstem = joinpath(@__DIR__, "..", "jld2")

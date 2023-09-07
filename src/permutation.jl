@@ -1,4 +1,3 @@
-include("periodic_substitution.jl")
 import Base.show
 
 mutable struct Permutation <: AbstractCipher

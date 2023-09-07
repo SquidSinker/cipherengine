@@ -1,5 +1,4 @@
 include("genetics.jl")
-include("permutation.jl")
 
 import IterTools.product
 

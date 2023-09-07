@@ -1,6 +1,12 @@
 module RxCiphers
 
-include("cracks.jl") # > genetics + p_subsitution > substitution > tuco > array_f + cipher > charspace
+include("cipher.jl") # -> charspace.jl (NCharSpace & Txt)
+include("array functions.jl")
+include("tuco.jl")
+include("periodic substitution.jl") # -> substitution.jl (Substitution)
+include("permutation.jl")
+include("matrix transposition.jl")
+include("cracks.jl") # -> genetics.jl
 export crack_Caesar, crack_Affine
 export crack_Vigenere, crack_Periodic_Affine
 # cipher
@@ -10,6 +16,8 @@ export apply, apply!, invert, invert!
 export Lambda, Retokenise, Reassign
 # permutation
 export Permutation, invPermutation
+# matrix transposition
+export MatrixTransposition
 # periodic substitution
 export PeriodicSubstitution, Vigenere, Periodic_Affine
 export length, getindex, iterate, setindex!, ==, show
@@ -46,9 +54,16 @@ export TxtSamples
 
 end
 
-# TO ADD
+# CURRENTLY SUPPORTED
+# Monoalphabetic Substitution (inc. Caesar, Affine, Atbash)
+# Polyalphabetic Substitution (inc. Vigenere, PAffine)
+# Permutation Transposition
 
-# Transpositions (separating Permutation from Matrix)
+# TO ADD
+# Fix the include tree it is horrible
+
+# Matrix Transposition (and Columnar)
+# Stupid Transpositions (Scytale, Redefence)
 # Square Ciphers
 
 # Nihilist set (subst. transp.)
