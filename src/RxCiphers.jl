@@ -6,6 +6,7 @@ include("tuco.jl")
 include("periodic substitution.jl") # -> substitution.jl (Substitution)
 include("permutation.jl")
 include("matrix transposition.jl")
+include("columnar.jl")
 include("cracks.jl") # -> genetics.jl
 export crack_Caesar, crack_Affine
 export crack_Vigenere, crack_Periodic_Affine
@@ -18,6 +19,8 @@ export Lambda, Retokenise, Reassign
 export Permutation, invPermutation
 # matrix transposition
 export MatrixTransposition
+# columnar
+export Columnar
 # periodic substitution
 export PeriodicSubstitution, Vigenere, Periodic_Affine
 export length, getindex, iterate, setindex!, ==, show

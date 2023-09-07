@@ -96,10 +96,21 @@ include("test results.jl")
     # MatrixTransposition
     MTrans_test = MatrixTransposition(6, true)
     mtrans_enc = MTrans_test(orwell)
-    @test mtrans_enc == mtrans_6_orwell_tokens
+    @test mtrans_enc.tokenised == mtrans_6_orwell_tokens
 
     invert!(MTrans_test)
     @test MTrans_test(mtrans_enc).tokenised == orwell_tokens
+
+    
+
+
+    # Columnar
+    Columnar_test = Columnar([1,4,3,2], true)
+    columnar_enc = Columnar_test(orwell)
+    @test columnar_enc.tokenised == columnar_1432_orwell_tokens
+
+    invert!(Columnar_test)
+    @test Columnar_test(columnar_enc).tokenised == orwell_tokens
 
     # Remains:
     # Base. overloads

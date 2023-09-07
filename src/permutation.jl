@@ -1,4 +1,5 @@
 import Base.show
+using Combinatorics
 
 mutable struct Permutation <: AbstractCipher
     n::Int
@@ -9,6 +10,11 @@ mutable struct Permutation <: AbstractCipher
 
     # UNSAFE DO NOT USE
     function Permutation(n::Int, permutation::Vector{Int}, remove_nulls::Bool, inverted::Bool)
+        if length(permutation) != n
+            e = ArgumentError("Permutation does not match provided length, use safe constructor")
+            throw(e)
+        end
+
         new(n, checkperm(permutation), remove_nulls, inverted)
     end
     # UNSAFE DO NOT USE
@@ -19,6 +25,8 @@ Permutation(permutation::Vector{Int}, remove_nulls::Bool = false) = Permutation(
 Permutation(n::Int, remove_nulls::Bool = false) = Permutation(n, collect(1:n), remove_nulls, false)
 invPermutation(permutation::Vector{Int}, remove_nulls::Bool = false) = Permutation(length(permutation), permutation, remove_nulls, true)
 invPermutation(n::Int, remove_nulls::Bool = false) = Permutation(n, collect(1:n), remove_nulls, true)
+
+Permutation(colon::Colon, n::Int) = Tuple(permutations(collect(1:n)))
 
 function invert!(P::Permutation)
     switch_invert_tag!(P)
