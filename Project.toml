@@ -1,7 +1,7 @@
 name = "RxCiphers"
 uuid = "5286dc34-9e20-4123-8e59-fcde100af23f"
 authors = ["rxwop <robiwop@gmail.com>", "Nayoar <nayoar8128@gmail.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
@@ -12,6 +12,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+Combinatorics = "1"
 FFTW = "1"
 IterTools = "1"
 JLD2 = "0.4"
