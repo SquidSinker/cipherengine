@@ -119,15 +119,15 @@ end
 
 # NORMALISATION ####################################
 """
-    normalise!(arr::Array{Float64} [, dims]) -> Array{Float64}
+    normalise!(arr::Array{AbstractFloat} [, dims]) -> Array{AbstractFloat}
 
 Divides by the sum of `arr` to make the new sum `1.`, if `dims` are given, `arr` is normalised only in those dims.
 """
-function normalise!(arr::Array{Float64}, dims) ::Array{Float64}
+function normalise!(arr::Array{AbstractFloat}, dims) ::Array{AbstractFloat}
     arr ./= sum(arr; dims = dims)
     return arr
 end
-function normalise!(arr::Array{Float64}) ::Array{Float64}
+function normalise!(arr::Array{AbstractFloat}) ::Array{AbstractFloat}
     arr /= sum(arr)
     return arr
 end
