@@ -1,6 +1,7 @@
 module RxCiphers
 
 include("cipher.jl") # -> charspace.jl (NCharSpace & Txt)
+include("dlm charspace.jl")
 include("array functions.jl")
 include("tuco.jl")
 include("periodic substitution.jl") # -> substitution.jl (Substitution)
