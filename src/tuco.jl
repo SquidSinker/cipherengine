@@ -49,7 +49,9 @@ function frequencies(txt::Txt) ::Dict{String, Float64}
 end
 
 
-
+function bandwidth(txt::Txt) ::Int
+    return length(unique(txt.tokenised))
+end
 
 
 # ORDERLESS MEASURES #########################################
