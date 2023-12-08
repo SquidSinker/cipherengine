@@ -3,6 +3,8 @@ import Base.==, Base.length, Base.+, Base.*, Base.^, Base.iterate, Base.getindex
 const NULL_TOKEN = 0
 
 
+abstract type AbstractCharSpace end
+
 """
     NCharSpace{N}
 
@@ -19,7 +21,7 @@ A characterspace, encoding substrings `::String` as tokens `::Int`.
 - `size::Int` is the number of encoded substrings / the number of tokens
 - `tokens::Vector{Int}` stores all of the encoding tokens, used for iteration
 """
-struct NCharSpace{N}
+struct NCharSpace{N} <: AbstractCharSpace
     charmap::Vector{String}
     tokenmap::Dict{String, Int}
 
@@ -161,7 +163,7 @@ function union(W1::NCharSpace{1}, W2::NCharSpace{1}) ::NCharSpace{1}
 end
 
 """
-    tokenise(s::String, W::NCharSpace{N}) -> Int, Nothing
+    tokenise(s::String, W::AbstractCharSpace) -> Int, Nothing
 
 Returns the token assigned to `s`
 
@@ -179,7 +181,7 @@ julia> tokenise("01", Decimal^2)
 
 ```
 """
-function tokenise(char::String, W::NCharSpace) ::Union{Nothing, Int}
+function tokenise(char::String, W::AbstractCharSpace) ::Union{Nothing, Int}
     try return W.tokenmap[char]
     catch err
         if err isa KeyError
@@ -191,7 +193,7 @@ function tokenise(char::String, W::NCharSpace) ::Union{Nothing, Int}
 end
 
 """
-    untokenise(token::Int, W::NCharSpace) -> String
+    untokenise(token::Int, W::AbstractCharSpace) -> String
 
 Returns the substring that is assigned `token` in `W`
 
@@ -204,7 +206,7 @@ julia> untokenise(15, Decimal^2)
 "41"
 ```
 """
-function untokenise(int::Int, W::NCharSpace) ::String
+function untokenise(int::Int, W::AbstractCharSpace) ::String
     return W.charmap[int]
 end
 
@@ -229,11 +231,11 @@ end
 
 
 """
-    checktoken(token::Int, W::NCharSpace)
+    checktoken(token::Int, W::AbstractCharSpace)
 
 Throws `ArgumentError` if the token does not exist in `W`, otherwise returns `token`
 """
-function checktoken(token::Int, W::NCharSpace)
+function checktoken(token::Int, W::AbstractCharSpace)
     b = 0 <= token <= W.size
     if b
         return token
@@ -263,7 +265,7 @@ mutable struct Txt
     raw::String
     case_sensitive::Bool
     cases::Union{Nothing, BitVector}
-    charspace::Union{Nothing, NCharSpace{N}} where N
+    charspace::Union{Nothing, AbstractCharSpace} where N
     tokenised::Union{Nothing, Vector{Int}}
     frozen::Union{Nothing, Dict{Int, String}}
     is_tokenised::Bool
@@ -358,11 +360,15 @@ end
 
 function show(io::IO, ::MIME"text/plain", txt::Txt)
     if txt.is_tokenised
-        N = findparam(txt.charspace)
-        if N == 1
-            insert = ""
-        else
-            insert = " ($(N)-gram tokens)"
+        if txt.charspace isa NCharSpace
+            N = findparam(txt.charspace)
+            if N == 1
+                insert = ""
+            else
+                insert = " ($(N)-gram tokens)"
+            end
+        elseif txt.charspace isa DLMSpace
+            insert = " (Delimited tokens)"
         end
 
         println(io, "$(length(txt))-token", txt.case_sensitive ? " case-sensitive" : "", " Txt", insert, ":")
@@ -372,6 +378,7 @@ function show(io::IO, ::MIME"text/plain", txt::Txt)
         show(io, txt.raw)
     end
 end
+
 
 
 function txtnchar!(txt::Txt, n::Int) ::Txt
@@ -514,36 +521,6 @@ function tokenise(txt::Txt, W::NCharSpace{1} = Alphabet) ::Tuple{Vector{Int}, Di
     return tokenised, frozen
 end
 
-# function jagged_tokenise(txt::Txt, W::CharSpace, blocks::Vector{Int}, null::Union{Char, String, Vector{Char}} = "X") ::Tuple{Vector{Int}, Dict{Int, String}}
-
-#     txt = deepcopy(txt)
-#     tokenise!(txt)
-#     untokenise!(txt; restore_frozen = false, restore_case = false)
-    
-#     if maximum(blocks) < W.n
-#         error("Maximum block size cannot be greater than CharSpace character length")
-#     end
-
-#     tokenised = Vector{Int}()
-#     text = txt.case_sensitive ? txt.raw : uppercase(txt.raw)
-#     frozen = Dict{Int, String}()
-
-#     while length(text) > 0
-#         char_index = findfirst(startswith.(text, W.chars))
-
-#         if isnothing(char_index) # if text doesn't start with any of W.chars
-#             frozen[length(tokenised)] = get(frozen, length(tokenised), "") * text[1]
-#             i = nextind(text, 1)
-#             text = text[i:end] # shave text by 1
-#             continue
-#         end
-
-#         push!(tokenised, char_index) # add token to tokenised
-#         text = text[W.n+1:end] # shave text by n
-#     end
-
-#     return tokenised, frozen
-# end
 
 
 """
@@ -559,10 +536,6 @@ function untokenise(txt::Txt, W::NCharSpace{1}; restore_frozen::Bool = true, res
 
     if !txt.is_tokenised
         throw(TokeniseError)
-    end
-
-    if isnothing(W)
-        W = txt.charspace
     end
 
     raw = get(txt.frozen, 0, "")
@@ -616,7 +589,7 @@ function tokenise!(txt::Txt, W::NCharSpace{1} = Alphabet) ::Txt
 end
 
 """
-    untokenise!(txt::Txt, W::Union{NCharSpace{1}, Nothing} = nothing; kwargs)
+    untokenise!(txt::Txt, W::Union{AbstractCharSpace, Nothing} = nothing; kwargs)
 
 Unokenises `txt` in place, updating the `raw::String` field and `is_tokenised` and clearing `tokenised`
 
@@ -631,7 +604,7 @@ julia> untokenise!(t)
 "Mr Wood moment"
 ```
 """
-function untokenise!(txt::Txt, W::Union{NCharSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::Txt
+function untokenise!(txt::Txt, W::Union{AbstractCharSpace, Nothing} = nothing; restore_frozen::Bool = true, restore_case::Bool = true) ::Txt
     raw = untokenise(txt, W, restore_case = restore_case)
     txt.charspace = nothing
     txt.tokenised = nothing
