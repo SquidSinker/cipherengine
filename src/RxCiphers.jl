@@ -30,7 +30,7 @@ export apply, invert!
 export Substitution, frequency_matched_Substitution, Atbash, Caesar, Affine
 export apply, length, +, -, ==, show, getindex, iterate, invert!, shift!, switch, switch!, mutate, mutate!
 # tuco
-export quadgramlog, bigramlog, poogramfart, orthodot
+export quadgramlog, bigramlog, poogramfart, orthodot, bandwidth
 export monogram_freq, bigram_freq, bigram_scores, quadgram_scores, poogram_scores
 export appearances, frequencies, vector_frequencies
 export ioc, periodic_ioc
@@ -46,6 +46,8 @@ export getindex, ^, ==, +, show, length, iterate, setindex!, lastindex, copy
 export Txt, tokenise, untokenise, tokenise!, untokenise!, checktoken
 export nchar!, nchar
 export TokeniseError, checktokenised
+# dlm charspace
+export DLMSpace
 # array functions
 export switch, switch!
 export safe_reshape_2D
