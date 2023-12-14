@@ -284,7 +284,8 @@ julia> Txt("A bright sunny day.")
 "A bright sunny day."
 ```
 """
-Txt(text, case_sensitive = false) = Txt(text, case_sensitive, isuppercase.(collect(text)), nothing, nothing, nothing, false)
+Txt(text::String, case_sensitive::Bool = false) = Txt(text, case_sensitive, isuppercase.(collect(text)), nothing, nothing, nothing, false)
+Txt(vec::Vector{Int}, cspace::AbstractCharSpace) = Txt("", false, nothing, cspace, vec, nothing, true)
 
 const TokeniseError = ErrorException("Txt is not tokenised")
 """
@@ -538,19 +539,44 @@ function untokenise(txt::Txt, W::NCharSpace{1}; restore_frozen::Bool = true, res
         throw(TokeniseError)
     end
 
-    raw = get(txt.frozen, 0, "")
-    n = 0
-    for token in txt.tokenised
-        if !(1 <= token <= W.size)
-            continue
+    if isnothing(txt.frozen)
+        restore_frozen = false
+    end
+
+    if isnothing(txt.cases)
+        restore_case = false
+    end
+
+    if !restore_frozen
+        raw = ""
+        n = 0
+        for token in txt.tokenised
+            if !(1 <= token <= W.size)
+                continue
+            end
+            char = W.charmap[token]
+            if restore_case && !txt.case_sensitive
+                raw *= txt.cases[1 + length(raw)] ? uppercase(char) : lowercase(char)
+            else
+                raw *= char
+            end
         end
-        char = W.charmap[token]
-        if restore_case && !txt.case_sensitive
-            raw *= txt.cases[1 + length(raw)] ? uppercase(char) : lowercase(char)
-        else
-            raw *= char
+
+    else
+        raw = get(txt.frozen, 0, "")
+        n = 0
+        for token in txt.tokenised
+            if !(1 <= token <= W.size)
+                continue
+            end
+            char = W.charmap[token]
+            if restore_case && !txt.case_sensitive
+                raw *= txt.cases[1 + length(raw)] ? uppercase(char) : lowercase(char)
+            else
+                raw *= char
+            end
+            raw *= get(txt.frozen, n += 1, "")
         end
-        raw *= get(txt.frozen, n += 1, "")
     end
 
     return raw
